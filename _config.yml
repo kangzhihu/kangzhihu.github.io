@@ -5,7 +5,7 @@ header-img: img/home-bg.jpg
 email: kangzhihu@gmail.com
 description: "关于程序与设计、思考与生活 | 阿虎，Java Software Engineer | 这里是 @kangzhihu阿虎 的个人博客，与你一起发现更大的世界。"
 keyword: "阿虎, 技术男, coldfire, 鬼栈, kangzhihu, @kangzhihu, 阿虎的博客, kangzhihu Blog, 博客, 个人网站, 互联网,后端,java"
-#url: "https://kangzhihu.me"              # your host, for absolute URL
+url: "https://kangzhihu.github.io/"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.
