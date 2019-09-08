@@ -59,7 +59,6 @@ public T get() {
  cacheData = null;                                   // 将弱引用持有的强引用对象关闭
   System.gc();                                       //再次gc
  System.out.println("第一次GC前" + cacheRef.get());   // get返回为null
- 
 ```
 
 #### 为何会产生泄露
