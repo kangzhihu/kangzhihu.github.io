@@ -7,8 +7,8 @@ header-style: text
 tags:
   - Java基础
 ---
-#### 使用方式
-````
+#### 常见ThreadLocal使用方式
+````java
 static  class ThreadId{
     private static final AtomicInteger nextId = new AtomicInteger(0);
     //线程本地变量，为每个线程关联一个唯一的序号
@@ -28,7 +28,7 @@ static  class ThreadId{
 
 ````
 可以看到，对于使用方来说，调用的是ThreadId.get()，在底层上，查看ThreadLocal源码存在：
-```
+```java
 //ThreadLocal
 public T get() {
     Thread t = Thread.currentThread();
