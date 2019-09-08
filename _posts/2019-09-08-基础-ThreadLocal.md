@@ -67,6 +67,11 @@ public T get() {
 &emsp;&emsp;在使用ThreadLocal的get()、set()、remove()时候，子方法getEntry才去进行空key的Entity擦除。当ThreadLocalMap后面不被访问时，一直要等到Thread被回收，这部分Entity才能被一起回收。   
 &emsp;&emsp;**所以泄漏的根本原因是在不合理的情况下，ThreadLocal变量被回收后，由于ThreadLocalMap的生命周期跟Thread一样长，此时如果没有自动触发或者手动删除对应key的value就会导致内存泄漏，而不是因为弱引用。**
 
+#### 为何要选择若引用
+>key 使用强引用：引用的ThreadLocal的对象被回收了，但是ThreadLocalMap还持有ThreadLocal的强引用，如果没有手动删除，ThreadLocal不会被回收，导致Entry内存泄漏。
+>key 使用弱引用：引用的ThreadLocal的对象被回收了，由于ThreadLocalMap持有ThreadLocal的弱引用，即使没有手动删除，ThreadLocal也会被回收。value在下一次ThreadLocalMap调用set,get，remove的时候会被清除。
+可以看出，由于ThreadLocalMap的生命周期跟Thread一样长，两种情况下如果都没有手动删除对应key，都会导致内存泄漏，在ThreadLocal被回收后，使用弱引用可以多一层保障。
+
 
 #### ThreadLocal中会不会发生WeakReference key提前被回收
 &emsp;&emsp;其实不会的，前面提到，WeakReference被回收的前提是对象没有任何其他strong reference指向的时候。我们在业务代码中，一般ThreadLocal这个强引用在业务还被需要的情况下不会主动释放的。
