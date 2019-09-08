@@ -51,7 +51,7 @@ public T get() {
 #### 为何要使用ThreadLocal
 &emsp;&emsp;弱引用：当一个对象仅仅被weak reference指向, 而<font color="red">没有任何其他strong reference指向的时候(或者编译器认为后面不会被使用)</font>, 如果GC运行, 那么这个对象就会被回收。    
 &emsp;&emsp;ThreadLocal一个很大的作用是简化对象的回收，若有多处被使用，当强引用不存在时，对象关联的多处弱引用可以被自动回收。
-```
+```java
  byte[] cacheData = new byte[100 * 1024 * 1024];   //强引用
  WeakReference<byte[]> cacheRef = new WeakReference<>(cacheData);   // 弱引用，持有强引用
  System.gc();
