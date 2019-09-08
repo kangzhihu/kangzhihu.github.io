@@ -3,7 +3,8 @@ layout: post
 title: "基础-ThreadLocal"
 subtitle: '关于ThreadLocal的思考'
 author: "Kang"
-header-style: text
+date:       2019-09-08 12:40:47
+header-img: "img/post-head-img/falloxbow-1058032-1278x533.jpg"
 catalog: true
 tags:
   - Java基础
