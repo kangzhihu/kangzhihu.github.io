@@ -62,7 +62,8 @@ protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition 
 &emsp;&emsp;需要注意的是，<font color='green'>applyBeanPostProcessorsBeforeInstantiation中存在targetSource，则直接在对象初始化之前进行创建代理, 避免了目标对象不必要的实例化</font>。此处若不存在targetSource，则在完成实例化后，于initializeBean方法中接着调用applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization进行处理。    
 
 ### BeanPostProcessor引入  
-&emsp;&emsp;applyBeanPostProcessorsBeforeInstantiation循环处理了所有的InstantiationAwareBeanPostProcessor，我们主要看关于AOP的子类AnnotationAwareAspectJAutoProxyCreator,在其父类中AbstractAutoProxyCreator中： 
+#### 实例化前的BeanPostProcessor
+&emsp;&emsp;我们简单看下实例化前，对于BeanPostProcessor的使用。resolveBeforeInstantiation尝试获取一个targetSource，其子方法applyBeanPostProcessorsBeforeInstantiation循环处理了所有的InstantiationAwareBeanPostProcessor，我们主要看关于AOP的子类AnnotationAwareAspectJAutoProxyCreator,在其父类中AbstractAutoProxyCreator中：   
 1. 先创建代理对象：postProcessBeforeInstantiation
 2. 对创建的代理对象使用BeanPostProcessor：postProcessAfterInitialization   
 
@@ -100,6 +101,12 @@ public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName
   return null;
 }
 
+```
+#### 实例化后的BeanPostProcessor(后置处理器)
+&emsp;&emsp;<font color='blue'>上面说到，只有在targetSource能获取到的时候才直接处理，否则将在对象初始化完成后initializeBean方法下的applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization，我们简单看下实例化完成之后的调用beanProcessor#postProcessAfterInitialization来进行AOP处理。</font>    
+```java
+// AbstractAutoProxyCreator.java
+
 //bean实例化完成后处理
 public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
     throws BeansException {
@@ -114,11 +121,7 @@ public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, St
   }
   return result;
 }
-```
 
-&emsp;&emsp;<font color='blue'>上面说到，只有在targetSource能获取到的时候才直接处理，否则将在对象初始化完成后initializeBean方法下的applyBeanPostProcessorsAfterInitialization中调用beanProcessor#postProcessAfterInitialization同样的进行AOP处理。</font>    
-```java
-// AbstractAutoProxyCreator.java
 public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) throws BeansException {
   if (bean != null) {
     Object cacheKey = getCacheKey(bean.getClass(), beanName);
