@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Spring-AOP实现"
+title: "Spring-BeanPostProcessor与AOP实现"
 subtitle: 'Spring介绍四'
 author: "Kang"
 date: 2019-09-15 14:23:49
@@ -19,9 +19,11 @@ tags:
 protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) throws BeanCreationException {
   //省略 ...
   try {
-    // Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
-    // 先调用InstantiationAwareBeanPostProcessor，可以直接返回一个代理对象，而不用去实例化
-    // 此处其实是AOP功能的核心要素
+    // 通过Bean的后置创建处理器进行后置处理创建代理对象，一般情况下此处不会生成额代理对象
+    // 为何不管是我们的jdk代理还是cglib代理都不会再此处进行代理呢？
+    // 答：应为我们的真实对象没有生成，所以这里不会生成代理对象。
+    // 那么这个resolveBeforeInstantiation方法到底做什么？
+    // 答：此处其实是AOP功能的核心要素，其在这个方法中对我们的AOP切面信息进行了缓存
     Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
     // 若存在代理，则直接返回，中断结束整个初始化流程
     if (bean != null) {
@@ -59,15 +61,14 @@ protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition 
   return bean;
 }
 ```
-&emsp;&emsp;需要注意的是，<font color='green'>applyBeanPostProcessorsBeforeInstantiation中存在targetSource，则直接在对象初始化之前进行创建代理, 避免了目标对象不必要的实例化</font>。此处若不存在targetSource，则在完成实例化后，于initializeBean方法中接着调用applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization进行处理。    
+&emsp;&emsp;需要注意的是，<font color='green'>applyBeanPostProcessorsBeforeInstantiation中存在targetSource，则直接在对象初始化之前进行创建代理, 避免了目标对象不必要的实例化</font>。此处不存在targetSource，在完成实例化后，于initializeBean方法中接着调用applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization进行处理。    
 
 ### BeanPostProcessor引入  
-#### 实例化前的BeanPostProcessor
-&emsp;&emsp;我们简单看下实例化前，对于BeanPostProcessor的使用。resolveBeforeInstantiation尝试获取一个targetSource，其子方法applyBeanPostProcessorsBeforeInstantiation循环处理了所有的InstantiationAwareBeanPostProcessor，我们主要看关于AOP的子类AnnotationAwareAspectJAutoProxyCreator,在其父类中AbstractAutoProxyCreator中：   
-1. 先创建代理对象：postProcessBeforeInstantiation
-2. 对创建的代理对象使用BeanPostProcessor：postProcessAfterInitialization   
+#### AOP等切面信息缓存
+&emsp;&emsp;我们简单看下实例化前，对于BeanPostProcessor的使用。resolveBeforeInstantiation尝试获取一个targetSource，其子方法applyBeanPostProcessorsBeforeInstantiation循环处理了所有的InstantiationAwareBeanPostProcessor，我们主要看关于AOP的子类AnnotationAwareAspectJAutoProxyCreator,在其父类中AbstractAutoProxyCreator中对AOP切面信息进行解析缓存。
 
 ```java
+// AOP切面信息进行解析缓存
 public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
   Object cacheKey = getCacheKey(beanClass, beanName);
 
