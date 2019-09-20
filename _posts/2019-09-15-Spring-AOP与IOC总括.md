@@ -15,6 +15,9 @@ tags:
 &emsp;&emsp;网上有一句话总结的十分精辟：IoC不是一种技术，只是一种思想。
 &emsp;&emsp;IoC对编程带来的最大改变不是从代码上，而是从思想上，发生了“主从换位”的变化。应用程序原本是老大，要获取什么资源都是主动出击自动动手，但是在IoC/DI思想中，应用程序就变成被动接受的(只管享受)了，被动的等待IoC容器来创建并注入它所需要的资源了。
 
+#### IOC容器
+&emsp;&emsp;IOC容器是由一系列的组件，包括BeanDefinitionMap、singletonObject(bean缓存池)、BeanPostProcessor等等，这些组件组合起来完成bean的依赖注入&控制反转功能的一个组件。
+
 ### AOP
 [推荐阅读-这个系列对AOP讲的比较全面](https://blog.csdn.net/zknxx)
 ###### 关于AOP的几个点：
