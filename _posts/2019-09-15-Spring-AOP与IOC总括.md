@@ -17,6 +17,10 @@ tags:
 
 #### IOC容器
 &emsp;&emsp;IOC容器是由一系列的组件，包括BeanDefinitionMap、singletonObject(bean缓存池)、BeanPostProcessor等等，这些组件组合起来完成bean的依赖注入&控制反转功能的一个组件。
+#### 父子容器
+&emsp;&emsp;在创建Bean的时候会先到父容器中获取bean，没有获取到的时候，再在子类容器中获取。下面是SpringMVC的一个父子容器：  
+![SpringMVC的父子工厂](https://raw.githubusercontent.com/kangzhihu/images/master/spring-mvc-context-hierarchy.png)  
+&emsp;&emsp;其中Root WebApplicationContext就是基础IOC容器。  
 
 ### AOP
 [推荐阅读-这个系列对AOP讲的比较全面](https://blog.csdn.net/zknxx)
@@ -101,6 +105,7 @@ public void refresh() throws BeansException, IllegalStateException {
             postProcessBeanFactory(beanFactory);
 
             //  获取所有的目前已有的BeanFactoryPostProcessor，并调用其postProcessBeanFactory对工厂进行处理
+            // 加载了Bean定义，生成Bean定义的集合
             // 注意：有别于bean后置处理器处理bean实例，beanFactory后置处理器是对bean工厂的扩展处理
             invokeBeanFactoryPostProcessors(beanFactory);
 
@@ -121,6 +126,7 @@ public void refresh() throws BeansException, IllegalStateException {
             registerListeners();
 
             // 单例模式的bean的实例化、成员变量注入、初始化等工作都在此完成
+            //也即创建bean
             finishBeanFactoryInitialization(beanFactory);
 
             // applicationContext刷新完成后的处理，例如生命周期监听器的回调，广播通知等
