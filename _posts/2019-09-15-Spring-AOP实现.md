@@ -103,7 +103,7 @@ public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName
 
 ```
 #### 实例化后的BeanPostProcessor(后置处理器)
-&emsp;&emsp;<font color='blue'>上面说到，只有在targetSource能获取到的时候才直接处理，否则将在对象初始化完成后initializeBean方法下的applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization，我们简单看下实例化完成之后的调用beanProcessor#postProcessAfterInitialization来进行AOP处理。</font>    
+&emsp;&emsp;<font color='blue'>上面说到，只有在targetSource能获取到的时候才直接处理，否则将在对象初始化完成后initializeBean方法下的applyBeanPostProcessorsBeforeInitialization和applyBeanPostProcessorsAfterInitialization，我们简单看下实例化完成之后的调用beanProcessor#postProcessAfterInitialization来进行Bean的属性/行为的修改，也在这个地方实现了AOP功能。</font>    
 ```java
 // AbstractAutoProxyCreator.java
 
