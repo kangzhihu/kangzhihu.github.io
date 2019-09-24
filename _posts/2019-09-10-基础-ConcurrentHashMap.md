@@ -36,4 +36,4 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
 &emsp;&emsp;对于未完成的节点(不为ForwardingNode)，正常读取数据。对于已经完成的节点，ForwardingNode方法重写了find方法，会转调新表访问已经迁移到了nextTable中的数据。  
 
 ##### 写/删
-&emsp;&emsp;如检查到当前节点已完成扩容(Node#hash = MOVED)，则参与到扩容中来。如果扩容没有完成(也无法参与了)，当前链表的头节点会被锁住，所以写线程会被阻塞，直到扩容完成。 
+&emsp;&emsp;如检查到当前节点已完成扩容(Node#hash = MOVED)，则参与到扩容中来。如果扩容没有完成，当前链表的头节点会被锁住，所以写线程会被阻塞，直到扩容完成。 
