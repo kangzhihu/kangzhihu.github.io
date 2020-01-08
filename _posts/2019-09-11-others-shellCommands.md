@@ -15,3 +15,14 @@ tags:
 ```shell
 mysqlbinlog --base64-output=DECODE-ROWS  -vv -d 二进制文件 > XXX.txt
 ```
+
+
+
+## Linux
+
+字符串内容查找截取:
+
+```
+grep '清洗异常' online.base.traderplat.service-2020-01-08-0.log | awk '{a=index($0,"订单");b=index($0,"清洗异常");print substr($0,a+2,b-a-2)}'
+```
+
