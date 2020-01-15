@@ -27,7 +27,7 @@ RocketMQ的消费方式：是基于拉模式拉取消息的，在这其中有一
 
 ```java
 public class DefaultMQPullConsumerImpl implements MQConsumerInner {
-    
+    private MQClientInstance mQClientFactory;
     private OffsetStore offsetStore;
     
     public synchronized void start() throws MQClientException {
