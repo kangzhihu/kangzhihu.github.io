@@ -50,7 +50,6 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
                     this.defaultMQPullConsumer.setOffsetStore(this.offsetStore);
                 }
 				// ....忽略代码...
-
         }
 
     }
