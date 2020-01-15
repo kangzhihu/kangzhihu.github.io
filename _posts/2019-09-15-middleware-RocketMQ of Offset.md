@@ -212,3 +212,10 @@ public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
 
 - 单个MessageQueue的Offset持久化：当发生Rebalance或者非法消息时；
 - persistAll持久化列表：服务停机时和MQClientInstance启动后10s调用一次
+
+
+
+总结：
+
+&emsp;&emsp;通过上面分析，其实也可以看出，只靠Offset是无法保证消息只被严格的消费一次的，若Offset内存值存在丢失情况，则消息会被多次消费。
+
