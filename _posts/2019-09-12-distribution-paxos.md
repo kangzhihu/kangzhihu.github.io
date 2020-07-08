@@ -10,7 +10,7 @@ tags:
   - 分布式
 ---
 ## 推荐参阅列表
-1. [推荐阅读-paxos生活化案例讲解](http://hedengcheng.com/?p=970)
+1. [推荐阅读-paxos生活化案例讲解](https://blog.csdn.net/omashion/article/details/54317871)
 2. [推荐阅读-架构师需要了解的Paxos原理、历程及实战](https://mp.weixin.qq.com/s?__biz=MzAwMDU1MTE1OQ==&mid=403582309&idx=1&sn=80c006f4e84a8af35dc8e9654f018ace&3rd=MzA3MDU4NTYzMw==&scene=6#rd)
 3. [推荐阅读-图解分布式一致性协议Paxos](https://www.cnblogs.com/hugb/p/8955505.html)
 4. [推荐阅读-Paxos协议超级详细解释+简单实例](https://blog.csdn.net/cnh294141800/article/details/53768464)
