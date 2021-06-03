@@ -93,11 +93,9 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 &emsp;&emsp;Kafka中的每个partition都由一系列有序的、不可变的消息组成，这些消息被连续的追加到partition中。partition中的每个消息都有一个连续的序号，用于partition唯一标识一条消息。**Offset从语义上来看拥有两种：Current Offset和Committed Offset。**
 
 - Current Offset
-
   &emsp;&emsp;其存储在Consumer端，每表示Consumer希望收到的下一条消息的序号，仅在pull方式中使用，例如，Consumer第一次使用pull拉取了20条数据，则Consumer本地记录了Current Offet被设置为20，下次拉取时将20传递给kafka。
 
 - Committed Offset
-
 &emsp;&emsp;保存在Broker上，它表示Consumer已经确认消费过的消息的序号，当消费者获取消息后宕机等不确认，则Committed Offset保持不变。
 
 &emsp;&emsp;**Committed Offset主要用于Consumer Rebalance。**在Consumer Rebalance的过程中，一个partition被分配给了一个Consumer，那么这个Consumer该从什么位置开始消费消息呢？答案就是Committed Offset，当新启动时，kafka返回从Committed Offset开始的消息，这样避免重复消费。

@@ -14,10 +14,14 @@ tags:
 &emsp;&emsp;这是由于网络通讯中，存在的中间节点设备，可能具有自动超时关闭作用，为了防止被自动关闭，需要一定时间后刷新链路。    
 
 #### TCP三次握手(SYN)
+
+![三次握手](https://raw.githubusercontent.com/kangzhihu/images/master/%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.png)
+
 - 1、A->B：A发送syn＝1(请求类型标识)、随机seq number到服务器B。syn码=1标识当前是希望建立连接，seq码可以认为是身份唯一标识字段。--自己进入SYN_SEND状态。  
 - 2、B->A：B查看syn发现=1则知道是想建立连接，若运行联机，则向A发送：ack=1(响应类型)、ack number=(主机A的seq+1)关联身份唯一标识，syn=1，seq number随机数据包。--自己进入SYN_RECV状态。  
 - 3、A->B：A客户端检查ack number(是否为seq+1)以及ack是否为1，若都正确，则再次发送ack number=(主机B的seq+1)且ack=1，B接受到后校验通过则完成连接--客户端和服务器端均进入ESTABLISHED状态。  
   
+
 &emsp;&emsp;每次都是先检查ack是否被对方正常确认，若确认则取对方seq码+1作为响应序列让对方返回时做身份认证，并自己也随机生成一个seq码让对方使用。当然SYN码是一直携带的，标识这是一个正在建立联机。
 
 

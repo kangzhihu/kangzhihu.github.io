@@ -51,8 +51,9 @@ public T get() {
 ![ThreadLocal](https://raw.githubusercontent.com/kangzhihu/images/master/ThreadLocal.png)
 
 ## 为何要使用ThreadLocal
-&emsp;&emsp;弱引用：当一个对象仅仅被weak reference指向, 而<font color="red">没有任何其他strong reference指向的时候(或者编译器认为后面不会被使用)</font>, 如果GC运行, 那么这个对象就会被回收。    
+&emsp;&emsp;弱引用：当一个对象***仅仅***被weak reference指向, 而<font color="red">没有任何其他strong reference指向的时候(或者编译器认为后面不会被使用)</font>, 如果GC运行, 那么这个对象就会被回收。    
 &emsp;&emsp;ThreadLocal一个很大的作用是简化对象的回收，若有多处被使用，当强引用不存在时，对象关联的多处弱引用可以被自动回收。
+
 ```java
  byte[] cacheData = new byte[100 * 1024 * 1024];   //强引用
  WeakReference<byte[]> cacheRef = new WeakReference<>(cacheData);   // 弱引用，持有强引用
@@ -76,4 +77,4 @@ public T get() {
 
 
 ## ThreadLocal中会不会发生WeakReference key提前被回收
-&emsp;&emsp;其实不会的，前面提到，WeakReference被回收的前提是对象没有任何其他strong reference指向的时候。我们在业务代码中，一般ThreadLocal这个强引用在业务还被需要的情况下不会主动释放的。
+&emsp;&emsp;其实不会的，前面提到，WeakReference被回收的前提是对象没有任何其他strong reference指向的时候。我们在业务代码中，一般ThreadLocal这个强引用在业务还被需要的情况下不会主动释放的，也就是其实还是有强引用存在的，所以key没有达到弱引用被回收的条件。

@@ -60,7 +60,7 @@ tags:
 #### failover失效转移
 &emsp;&emsp;在客户端配置failover，当一个集群Master节点失效时，客户端可以直接转移连接另一个节点。注意的是，客户端的failover需要将两个集群的Broker节点都配置上去；
 #### 集群之间数据共享与同步
-&emsp;&emsp;两个Cluster集群之间通过etworkConnector进行数据同步。由于集群Master节点共享queue队列，消费端连接到任意一个集群时，若当前消息不存在，当前服务集群会去另一个集群中取消息。  
+&emsp;&emsp;两个Cluster集群之间通过networkConnector进行数据同步。由于集群Master节点共享queue队列，消费端连接到任意一个集群时，若当前消息不存在，当前服务集群会去另一个集群中取消息。  
 
 #### 集群负载均衡
 &emsp;&emsp;这个地方所说的负载均衡貌似只是消费端来说的，其可以到任何一个集群去消费，对于Producer来说，还是发送到指定集群。。。   
