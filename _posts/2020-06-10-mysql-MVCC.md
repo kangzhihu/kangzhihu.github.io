@@ -242,10 +242,6 @@ SELECT * FROM t WHERE id = 1; # 得到的列c的值仍为'刘备'
 -----
 
 ## 操作日志
-#### redo log
-&emsp;&emsp;redo log就是保存执行的SQL语句到一个指定的Log文件，当Mysql执行recovery时重新执行redo log记录的SQL操作（更新语句）即可。当客户端执行每条SQL时，redo log会被首先写入<font color="red">log buffer；当客户端执行COMMIT命令时，log buffer中的内容会被视情况刷新到磁盘</font>。redo log在磁盘上作为一个独立的文件存在，即Innodb的log文件。
-#### undo log
-与redo log相反，undo log是为回滚而用，具体内容就是copy事务前的数据库内容（行）到<font color="red">undo buffer，在适合的时间把undo buffer中的内容刷新到磁盘</font>。undo buffer与redo buffer一样，也是环形缓冲，但当缓冲满的时候，undo buffer中的内容会也会被刷新到磁盘；与redo log不同的是，磁盘上不存在单独的undo log文件，所有的undo log均存放在主ibd数据文件中（表空间），即使客户端设置了每表一个数据文件也是如此。
 
 ##### 操作日志过程 
 &emsp;&emsp;一个事务的事务型操作过程归纳为下列步骤：  
