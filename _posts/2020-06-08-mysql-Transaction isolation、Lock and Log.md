@@ -18,7 +18,7 @@ tags:
 > 还是没理解的点：对于同一条数据，在RR下是怎么防止快照读下变更覆盖的??  -- 在提交阶段检测DB_TRX_ID版本号or业务自己控制版本号？？
 
 ## 事务的隔离级别
-- 未提交读(Read_Uncommit) 
+- 未提交读(Read_Uncommit)    
 &emsp;&emsp;B使用查询语句可能会读到A未提交的行（脏读）
 
 - 提交读(Read_Commit,Oracle默认级别)  
@@ -106,9 +106,9 @@ insert into news value(14,3);#(阻塞)
 3. 场景中两个事务都持有gap lock，然后又申请插入意向锁，此时都被阻塞，循环等待造成死锁。
 
 #### 意向锁
-&emsp;&emsp;意向锁包括共享意向锁(读锁)&排它意向锁(写锁)
-&emsp;&emsp;排它意向锁是一种Gap锁，不是意向锁，在insert操作时产生。    
-&emsp;&emsp;insert在做插入时，其加锁过程为先在插入间隙上获取插入意向锁，插入数据后再获取插入行上的排它锁。插入意向锁与gap lock和 Next-key lock冲突的，需要等待这两种锁释放。
+&emsp;&emsp;意向锁包括共享意向锁(读锁)&排它意向锁(写锁)    
+&emsp;&emsp;排它意向锁是一种Gap锁，不是意向锁，在insert操作时产生。      
+&emsp;&emsp;insert在做插入时，其加锁过程为先在插入间隙上获取插入意向锁，插入数据后再获取插入行上的排它锁。插入意向锁与gap lock和 Next-key lock冲突的，需要等待这两种锁释放。   
    
 #### 锁的兼容性表    
 ![锁兼容矩阵](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-%E9%94%81%E5%85%BC%E5%AE%B9%E8%A1%A8.jpg)  
