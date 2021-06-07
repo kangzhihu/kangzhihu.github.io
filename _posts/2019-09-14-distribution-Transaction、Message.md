@@ -71,6 +71,6 @@ Q：发送端把消息成功放入了队列(允许消费)，但消费端消费�
 
 #### 异步消息
 &emsp;&emsp;Activemq通过使用窗口尺寸来约束在发送<font color="red">异步消息</font>时Productor端允许积压的(尚未ACK)消息大小。   
-&emsp;&emsp;通过全局设置Productor或单个目的地设置window.size来控制可积压消息大小； 
+&emsp;&emsp;通过全局设置Productor或单个目的地设置window.size来控制可积压消息大小；     
 &emsp;&emsp;在异步发送时，先检查memoryUsage(持久消息)/tempUsage(非持久化消息，若有使用)中是否有足够的空间，若不够，则阻塞，否则正常发送并增加对应发送消息的尺寸。在每次broker返回productorAck后，则memoryUsage尺寸减少相应的消息大小。
   

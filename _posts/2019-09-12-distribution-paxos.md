@@ -93,3 +93,6 @@ Accept阶段
 ### Question
 1. 如果靠提议ID的大小决定，那岂不是谁的大谁就会被接受,可不可能不应该被接受的使用最大id。 
 2. 想获得过半响应，则需要等待多久？
+
+### Draft算法
+![在线示意图](http://thesecretlivesofdata.com/raft/)

@@ -145,7 +145,7 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 &emsp;&emsp;这次只是为了创建基础对象，而不是为了代理(代理是为了增强功能)，所以也使用了反射去生成对象。      
 &emsp;&emsp;两种创建方式引出一个很经典的问题：如果不做特殊配置 spring的@Transactional注解，放在类中非接口内的方法上时，是不起作用的。因为Spring默认使用JDK的代理（只代理了接口中的方法），被pring代理的类只能拦截接口中的方法，不能拦截非接口中的方法。
 
-### 属性实例化   
+### 属性实例化
 &emsp;&emsp;看完了 createBeanInstance(...) 方法，我们来看看 populateBean(...) 方法，该方法负责进行属性设值，处理依赖。
 ```java
 protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {

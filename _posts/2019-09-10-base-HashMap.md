@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "基础-HashMap"
-subtitle: 'HashMapd概括与总结'
+subtitle: 'HashMap概括与总结'
 author: "Kang"
 date: 2019-09-10 18:10:47
 header-img: "img/post-head-img/stingray-4392776_960_720.jpg"

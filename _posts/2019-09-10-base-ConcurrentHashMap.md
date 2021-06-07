@@ -14,7 +14,7 @@ tags:
 &emsp;&emsp;jdk8：数组+链式+红黑树+无锁结构，采用渐进式扩容。JDK8通过Unsafe类的CAS自旋赋值+synchronized同步+LockSupport阻塞等手段实现的高效并发，JDK8的锁粒度更细，理想情况下talbe数组元素的大小就是其支持并发的最大个数。
 
 ## 打标扩容
-[推荐阅读](https://www.jianshu.com/p/487d00afe6ca)  
+[参考阅读](https://blog.csdn.net/ZOKEKAI/article/details/90051567)
 &emsp;&emsp;jdk8的ForwardingNode节点类：对于在扩容步长范围内的节点，在扩容时，将旧节点加锁，并将旧节点移动到新数组中，移动<font color="blue">完成后将旧节点位置存放一个ForwardingNode节点</font>，表示当前节点已经做扩容处理，其保留了新数组中nextTable的引用，若取值需要转新表结构去查找。 
 
 #### 哪些会参与扩容
@@ -29,7 +29,6 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
 }
 ```
 &emsp;&emsp;从上面可以看出，当前线程获取的数组Node节点，若为扩容状态，则参与进来。也即受到影响的线程会参与进来。
-
 #### 扩容时的读写
 
 ##### 读

@@ -35,7 +35,7 @@ b)、使用AopProxy创建具体的代理对象。
 &emsp;&emsp;在doCreateBean中initializeBean发放在初始化对象时调用了BeanPostProcessors，其中AbstractAutoProxyCreator为BeanPostProcessor的一种，其方法postProcessAfterInitialization->wrapIfNecessary中做了是否需要代理替换的判断，当存在advice时，则调用getProxy走AOP代理对象创建。
 
 - 3、调用链  
-&emsp;&emsp;AOP对象的拦截器执行链是一个MethodInterceptor的集合,在动态代理proceed中同一被使用。  
+&emsp;&emsp;AOP对象的拦截器执行链是一个MethodInterceptor的集合,在动态代理proceed中统一被使用。  
 
 - 4、关于拦截器链使用：  
 &emsp;&emsp;a)、在创建代理对象时，将advised作为一个属性封装在代理对象中；     
