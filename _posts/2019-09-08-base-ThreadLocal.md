@@ -60,12 +60,12 @@ public T get() {
  System.gc();
  System.out.println("第一次GC前" + cacheRef.get());   //打印结果时，对象仍然存在
  cacheData = null;                                   // 将弱引用持有的强引用对象关闭
-  System.gc();                                       //再次gc
+ System.gc();                                       //再次gc
  System.out.println("第一次GC前" + cacheRef.get());   // get返回为null
 ```
 
 ## 为何会产生泄露
-&emsp;&emsp;从上图可以看到，当前线程通过ThreadLocal获取了当前线程本身的ThreadLocalMap引用。ThreadLocalMap中Entity的key是外部使用的ThreadLocal的一个弱引用，当发生GC后，若此时**属性变量threadLocal被释放回收**，Entity的key弱引用被回收，但是ThreadLocalMap仍然被当前线程持有，所以出现Entity仍然被持有但其属性key为空情况。 
+&emsp;&emsp;从上图可以看到，当前线程通过ThreadLocal获取了当前线程本身的ThreadLocalMap引用。ThreadLocalMap中Entity的key是外部使用的ThreadLocal的一个弱引用，当发生GC后，若此时**属性变量threadLocal被释放回收**，Entity的key弱引用被回收，但是ThreadLocalMap仍然被当前线程持有，所以出现Entity仍然被持有但其属性key为空情况。    
 &emsp;&emsp;在使用ThreadLocal的get()、set()、remove()时候，子方法getEntry才去进行空key的Entity擦除。当ThreadLocalMap后面不被访问时，一直要等到Thread被回收，这部分Entity才能被一起回收。   
 &emsp;&emsp;**所以泄漏的根本原因是在不合理的情况下，ThreadLocal变量被回收后，由于ThreadLocalMap的生命周期跟Thread一样长，此时如果没有自动触发或者手动删除对应key的value就会导致内存泄漏，而不是因为弱引用。**
 
