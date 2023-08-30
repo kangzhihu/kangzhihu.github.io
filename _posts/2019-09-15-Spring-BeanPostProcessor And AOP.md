@@ -19,9 +19,9 @@ tags:
 protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) throws BeanCreationException {
   //省略 ...
   try {
-    // 通过Bean的后置创建处理器进行后置处理创建代理对象，一般情况下此处不会生成额代理对象
+    // 通过Bean的后置创建处理器进行后置处理创建代理对象，一般情况下此处不会生成代理对象
     // 为何不管是我们的jdk代理还是cglib代理都不会再此处进行代理呢？
-    // 答：应为我们的真实对象没有生成，所以这里不会生成代理对象。
+    // 答：因为我们的真实对象没有生成，所以这里不会生成代理对象。
     // 那么这个resolveBeforeInstantiation方法到底做什么？
     // 答：此处其实是AOP功能的核心要素，其在这个方法中对我们的AOP切面信息进行了缓存
     Object bean = resolveBeforeInstantiation(beanName, mbdToUse);

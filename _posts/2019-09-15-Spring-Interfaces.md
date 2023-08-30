@@ -17,11 +17,11 @@ tags:
 - BeanNameAware：将Spring配置文件中Bean的id值传递给实现了该接口的Bean。  
 - BeanFactoryAware：将Spring工厂自身传递给实现了该接口的Bean。   
 - ApplicationContextAware：将Spring上下文传递给实现了该接口的Bean。   
-
+    + 将外部信息传递给springboot框架内部
 
 ### BeanPostProcessor
 &emsp;&emsp;在Spring容器中完成bean实例化、配置以及其他初始化方法前后要添加一些自己逻辑处理。我们需要定义一个或多个BeanPostProcessor接口实现类，将生成的BeanWrapper传递出来做处理，然后再注册到Spring IoC容器中。  
-
++ 将spring框架内部信息传递出来
 
 ### NamespaceHandler
 &emsp;&emsp;我们在使用Spring中不同的功能的时候可能会引入不同的命名空间比如xmlns:context，xmlns:aop，xmlns:tx等等。在Spring中定义了一个这样的抽象类专门用来解析不同的命名空间。这个类是NamespaceHandler。     

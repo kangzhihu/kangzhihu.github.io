@@ -63,7 +63,7 @@ tags:
 
 <font color="red">直接I/O的write：（少了拷贝到进程缓冲区这一步）</font>  
 ![直接I/O的write图](https://raw.githubusercontent.com/kangzhihu/images/master/%E7%9B%B4%E6%8E%A5IO%E7%9A%84write.png)  
-&emsp;&emsp;write过程中会有很多次拷贝，知道数据全部写到磁盘。好了，准备知识概略复习了一下，开始探讨IO模式。  
+&emsp;&emsp;write过程中会有很多次拷贝，直到数据全部写到磁盘。好了，准备知识概略复习了一下，开始探讨IO模式。  
 
 
 ## 2. I/O模式
@@ -122,7 +122,7 @@ read为例：
 &emsp;&emsp;上图和blocking IO的图其实并没有太大的不同，事实上，还更差一些。因为这里需要使用两个system call (select 和 recvfrom)，而blocking IO只调用了一个system call (recvfrom)。但是，用select的优势在于它可以同时处理多个connection。  
 所以，如果处理的连接数不是很高的话，使用select/epoll的web server不一定比使用多线程 + 阻塞 IO的web server性能更好，可能延迟还更大。  
 &emsp;&emsp;<font color="red">select/epoll的优势并不是对于单个连接能处理得更快，而是在于能处理更多的连接。</font>    
-&emsp;&emsp;在IO multiplexing Model中，<font color="red">可以理解在内核中存在一个注册表，当用户进程调用select时，会向该表注册一个socket，内核中有单独的线程去不停的读取该表注册的socket的状态。对于每一个socket，一般都设置成为non-blocking，但是，如上图所示，**整个用户的process其实是一直被block的。只不过process是被select这个函数block，而不是被socket IO给block。**</font>   
+&emsp;&emsp;在IO multiplexing Model中，<font color="red">可以理解在内核中存在一个注册表，当用户进程调用select时，会向该表注册一个socket，内核中有单独的线程去不停的读取该表注册的socket的状态。对于每一个socket，一般都设置成为non-blocking，但是，如上图所示，**整个用户的process处理流程其实是一直被block的。只不过process是被select这个函数block，而不是被socket IO给block**。</font>   
 
 
 

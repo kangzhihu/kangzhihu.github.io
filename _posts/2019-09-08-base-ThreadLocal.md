@@ -51,6 +51,7 @@ public T get() {
 ![ThreadLocal](https://raw.githubusercontent.com/kangzhihu/images/master/ThreadLocal.png)
 
 ## 为何要使用ThreadLocal
+ThreadLocal是一个工具类，对所有线程的内容进行管理  
 &emsp;&emsp;弱引用：当一个对象***仅仅***被weak reference指向, 而<font color="red">没有任何其他strong reference指向的时候(或者编译器认为后面不会被使用)</font>, 如果GC运行, 那么这个对象就会被回收。    
 &emsp;&emsp;ThreadLocal一个很大的作用是简化对象的回收，若有多处被使用，当强引用不存在时，对象关联的多处弱引用可以被自动回收。
 
