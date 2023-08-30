@@ -90,6 +90,7 @@ public BeanDefinition parseCustomElement(Element ele, @Nullable BeanDefinition c
 根据元素的namespaceUri（也就是xml文件头那一串schema）找到对应的NamespaceHandler.【这里就是扩展自定义配置的入口】，然后调用解析器进行parse解析出BeanDefinition。
 
 #### 3. 代用总出口
+&emsp;&emsp;ReferenceAnnotationBeanPostProcessor实现了@Reference解析管理，其核心方法就是调用到ReferenceBean.get()，在通过FactoryBean接管了Dubbo代理对象的创建。  
 &emsp;&emsp;ReferenceBean实例为一个服务代理refer，该refer包含一个DubboInvoker调用器invoker实例；
 1. ReferenceBean继承了ReferenceConfig类并实现了FactoryBean接口，ReferenceConfig实现了FactoryBean.getObject()转调用的get()方法，其中get-->init中存在：    
 
