@@ -126,4 +126,17 @@ Leader 会把修改复制到所有 Follower。
 Leader 会等待大多数的 Follower 也进行了修改，然后才将修改提交。
 ![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy3.gif)
 此时 Leader 会通知的所有 Follower 让它们也提交修改，此时所有节点的值达成一致。
-![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy4.gif) 
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy4.gif)
+最后，领导者向客户端返回日志写入成功的响应消息。
+
+###### 日志格式 
+&emsp;&emsp;在Raft算法中，实现分布式一致性的数据被称为日志（log）。日志记录按照时间顺序进行追加，确保顺序一致性。在Raft算法中，日志以特定的格式写入日志文件，并严格按照时间顺序进行记录。通过这种方式，Raft算法保证了数据的可靠性和一致性。  
+下面这张图就描述了Raft集群中日志的组成结构：  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-log.jpg)
+在Raft算法中，每个小方框表示一个日志条目（entry），每个日志条目包含一条命令（command）、任期编号（term）、日志条目在日志中的位置信息（索引值LogIndex）。  
+- 命令：由客户端请求发送的执行指令，可以理解为客户端需要存储的日志数据。
+- 索引值：表示日志条目在日志中的位置，它是一个连续且单调递增的整数。
+- 任期编号：指的是创建该日志条目的领导者的任期编号。这个任期编号用于标识在哪个任期内该日志条目被创建。
+
+
+
