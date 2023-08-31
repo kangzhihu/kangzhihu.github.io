@@ -98,7 +98,7 @@ Accept阶段
 2. 想获得过半响应，则需要等待多久？
 
 ### Raft算法
-![在线示意图](http://thesecretlivesofdata.com/raft/)
+[在线示意图](http://thesecretlivesofdata.com/raft/)
 > 引入主节点，通过竞选。
 
 &emsp;&emsp;节点类型：Follower、Candidate 和 Leader,Leader 会周期性的发送心跳包给 Follower。每个 Follower 都设置了一个随机的竞选超时时间，一般为 150ms~300ms，如果在这个时间内没有收到 Leader 的心跳包，就会变成 Candidate，进入竞选阶段。  
