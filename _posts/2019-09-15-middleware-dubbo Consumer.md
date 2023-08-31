@@ -64,7 +64,7 @@ public class HeaderExchanger implements Exchanger {
 
 }
 ```
-&emsp;&emsp;Transporters.bind方法将Handler处理器绑定到底层通讯框架上，做服务监听，也即Handler存在代理关系：<font color="blue">DecodeHandler(HeaderExchangeHandler(ExchangeHandlerAdapter子类))</font>，故可以推测，<font color="red">整个消息的回复处理为DubboProtocol中ExchangeHandlerAdapter子类对象</font>
+&emsp;&emsp;Transporters.bind方法将Handler处理器绑定到底层通讯框架上，做服务监听，也即Handler存在代理关系：<font color="blue">DecodeHandler(HeaderExchangeHandler(ExchangeHandlerAdapter子类))</font>，故可以推测，<font color="red">整个消息的回复处理为DubboProtocol中ExchangeHandlerAdapter子类对象</font>。  
 &emsp;&emsp;HeaderExchangeClient中包含了一个NettyClient，其完成了对netty模型的编排；  
 ```java
 //netty框架编排前 handler增强成如下结构

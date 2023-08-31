@@ -15,7 +15,7 @@ tags:
 3. [推荐阅读-图解分布式一致性协议Paxos](https://www.cnblogs.com/hugb/p/8955505.html)
 4. [推荐阅读-Paxos协议超级详细解释+简单实例](https://blog.csdn.net/cnh294141800/article/details/53768464)
 ## 解决了什么
-&emsp;&emsp;解决分布式环境下一致性的问题。
+&emsp;&emsp;解决分布式环境下数据一致性的问题。分布式环境下不同数据副本节点之间可能数据不一致，paxos算法提供了一种可靠的解决方案。
 
 ## 涉及到角色
 1. Proposer：N个，提议发起者，将提案<proposal number, n>对外公布，发送自己的提议；  
@@ -39,17 +39,20 @@ P1-b)：Acceptor 应答 Prepare
 ##### 两个承诺   
 &emsp;&emsp;承诺一，Acceptor不再应答Proposer发出的 Proposalid 小于等于（注意：这里是 <= ）当前请求的 <font color='green'>PrepareRequest</font>； -- --> 第一阶段的承诺,响应<font color='blue'>PrepareResponse</font>,貌似响应中也应为目前无接受值而只是包含Proposalid   
 &emsp;&emsp;承诺二，Acceptor不再应答Proposer发出的 Proposalid 小于（注意：这里是 < ）当前请求的 <font color='green'>AcceptRequest</font>; -- --> 第二阶段的承诺,响应<font color='blue'>AcceptResponse </font>  
+> 承诺接收最新提案且废弃旧提案
 
 ##### 一个应答   
 &emsp;&emsp;若传入的提案的编号大于它已经回复的所有 prepare 消息，则Acceptor返回自己已经 Accept 过的提案中 ProposalID 较大的那个提案的内容(已批准过最大值)，如果没有则返回空值;   
 &emsp;&emsp;应答当前请求前，也要按照“两个承诺”检查，且Acceptor应答前要在本地持久化当前响应的Propsalid。      
+> 把自己已经应答过的历史值返回给Proposer，这样Proposer就可以对历史的最大提案值重新作为提案内容。
 
 <font color="#6A5ACD">在Prepare阶段，Acceptor可以不停的根据上面的两个承诺进行应答。</font>
 
 #### 第二阶段 Accept
 <font color="#009ACD">当一个 Proposer 收到了多数 Acceptors 对 prepare 的回复后，就进入批准阶段。</font>   
 P2-a)：Proposer 发送 Accept   
-&emsp;&emsp;“提案生成规则”：Proposer 收集到第一阶段多数派应答的 PrepareResponse 后，从中选择proposalid最大的提案内容，作为要发起 Accept 的提案，如果这个提案为空值，则可以自己随意决定提案内容，否则携带在prepare决定的<Proposalid,value>，然后携带上当前 Proposalid，向 Paxos 集群的所有机器发送<font color='green'>AccpetRequest</font>。-- 此时要不就是初始阶段携带了自己值，要不就是携带了接受的提案编号以及对应的值   
+&emsp;&emsp;“提案生成规则”：Proposer 收集到第一阶段多数派应答的 PrepareResponse 后，从中选择proposalid最大的提案内容，作为要发起 Accept 的提案，如果这个提案为空值，则可以自己随意决定提案内容，否则获取在prepare阶段响应中的最大的Proposalid的value，然后加上当前 Proposalid，向 Paxos 集群的所有机器发送<font color='green'>AccpetRequest<Proposalid,value></font>。  
+> 此时要不就是初始阶段携带了自己值，要不就是携带了某个Acceptor接受的最大提案编号以及对应的值   
 
 P2-b)：Acceptor 应答 Accept  
 &emsp;&emsp;Accpetor 收到 AccpetRequest 后，检查不违背自己之前作出的“两个承诺”情况下，持久化当前 Proposalid 和提案内容，若此时在半数中有新的协议版本>当前版本，则将返回新的<font color='blue'>AcceptResponse</font>。最后 Proposer 收集到多数派应答的 AcceptResponse 后，形成决议。
@@ -94,5 +97,33 @@ Accept阶段
 1. 如果靠提议ID的大小决定，那岂不是谁的大谁就会被接受,可不可能不应该被接受的使用最大id。 
 2. 想获得过半响应，则需要等待多久？
 
-### Draft算法
+### Raft算法
 ![在线示意图](http://thesecretlivesofdata.com/raft/)
+> 引入主节点，通过竞选。
+
+&emsp;&emsp;节点类型：Follower、Candidate 和 Leader,Leader 会周期性的发送心跳包给 Follower。每个 Follower 都设置了一个随机的竞选超时时间，一般为 150ms~300ms，如果在这个时间内没有收到 Leader 的心跳包，就会变成 Candidate，进入竞选阶段。  
+
+##### 流程
+&emsp;&emsp;最初阶段，此时只有 Follower，没有 Leader。Follower A 等待一个随机的竞选超时时间之后，没收到 Leader 发来的心跳包，因此进入竞选阶段。   
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-init.gif)  
+此时 A 发送投票请求给其它所有节点。  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-init1.gif)   
+其它节点会对请求进行回复，如果超过一半的节点回复了，那么该 Candidate 就会变成 Leader。  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-init2.gif)  
+之后 Leader 会周期性地发送心跳包给 Follower，Follower 接收到心跳包，会重新开始计时。  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-run.gif)  
+##### 多个 Candidate 竞选
+如果有多个 Follower 成为 Candidate，并且所获得票数相同，那么就需要重新开始投票，例如下图中 Candidate B 和 Candidate D 都获得两票，因此需要重新开始投票。   
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-leader1.gif)  
+当重新开始投票时，由于每个节点设置的随机竞选超时时间不同，因此能下一次再次出现多个 Candidate 并获得同样票数的概率很低。   
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-leaeder2.gif) 
+
+##### 日志复制
+来自客户端的修改都会被传入 Leader。注意该修改还未被提交，只是写入日志中。  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy1.gif)
+Leader 会把修改复制到所有 Follower。  
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy2.gif)
+Leader 会等待大多数的 Follower 也进行了修改，然后才将修改提交。
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy3.gif)
+此时 Leader 会通知的所有 Follower 让它们也提交修改，此时所有节点的值达成一致。
+![在线示意图](https://raw.githubusercontent.com/kangzhihu/images/master/raft-copy4.gif) 
