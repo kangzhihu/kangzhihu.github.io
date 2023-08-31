@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "分布式-一致性paxos算法简单整理"
-subtitle: '一致性paxos算法简单整理'
+title: "分布式-一致性算法简单整理"
+subtitle: '一致性paxos、raft算法简单整理'
 author: "Kang"
 date: 2019-09-12 18:01:10
 header-img: "img/post-head-img/network-3396348_1280.jpg"
@@ -15,14 +15,21 @@ tags:
 3. [推荐阅读-图解分布式一致性协议Paxos](https://www.cnblogs.com/hugb/p/8955505.html)
 4. [推荐阅读-Paxos协议超级详细解释+简单实例](https://blog.csdn.net/cnh294141800/article/details/53768464)
 ## 解决了什么
-&emsp;&emsp;解决分布式环境下数据一致性的问题。分布式环境下不同数据副本节点之间可能数据不一致，paxos算法提供了一种可靠的解决方案。
+&emsp;&emsp;解决分布式环境下数据一致性的问题。分布式环境下不同数据副本节点之间可能数据不一致，paxos和raft算法提供了一种可靠的解决方案。
 
-## 涉及到角色
+> 两者的很大区别：Paxos算法的主个人理解是对当前"任期"有效的，当提案完成后主就失效了，而Raft算法会产生一个Leader。Raft算法中通过心跳机制来检测节点失效，而Paxos算法则是通过Timeout机制来检测失效节点。
+
+> 在实际应用中，Raft算法和Paxos算法也各有优劣。Raft算法相对来说更加适用于**需要频繁变更集群配置**的场景，例如分布式数据库的自动扩展。而Paxos算法则更适合于需要**高度可用性和容错性**的场景，例如分布式锁、分布式事务等，就某个值达成一致的算法。  
+> Paxos算法任意一个节点都可接受请求，而Raft节点通过leader节点进服务。
+
+## Paxos算法
+
+### 涉及到角色
 1. Proposer：N个，提议发起者，将提案<proposal number, n>对外公布，发送自己的提议；  
 2. Acceptor：N个，提议接受者(一般也是投票者Proposer)，Proposer提出的提议必须获得超过半数(N/2+1)的 Acceptor批准后才能通过。
 3. Learner：1个，提议学习者，当一个提议通过后，Learner将通过的确定性取值同步给其他未确定的Acceptor。  
 
-## 协议过程简单总结
+### 协议过程简单总结
 &emsp;&emsp;一句话总结：proposer将发起提案（value）给所有accpetor，超过半数accpetor获得批准后，proposer将提案写入accpetor内，最终所有accpetor获得一致性的确定性取值，且后续不允许再修改。   
 &emsp;&emsp;若不能收集到半数投票，这一轮参与者将一直等待；   
 &emsp;&emsp;在节点角色中存在一个本地定时器，一个倒计时即为一个周期。对于选主Leader场景，如果周期内Leader未发送心跳消息，则Follower自动开启新一轮选主操作。
@@ -92,12 +99,14 @@ Accept阶段
 12. Proposor1选择上一步中编号大的值提交。所以，提交编号3,value=b;
 13. 达成一致，Acceptor中都在本地维护了相同的值(value=b)。
 
+### Multi Paxos
+&emsp;&emsp;Basic-Paxos 只是理论模型，在实际工程场景下，比如数据库同步 Redolog，还是需要集群内有一个 leader，作为数据库主机，和多个备机联合组成一个 Paoxs 集群，对 Redolog 进行持久化。  
 
 ### Question
 1. 如果靠提议ID的大小决定，那岂不是谁的大谁就会被接受,可不可能不应该被接受的使用最大id。 
 2. 想获得过半响应，则需要等待多久？
 
-### Raft算法
+## Raft算法
 [在线示意图](http://thesecretlivesofdata.com/raft/)
 > 引入主节点，通过竞选。
 
