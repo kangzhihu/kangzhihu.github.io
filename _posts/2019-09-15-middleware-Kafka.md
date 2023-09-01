@@ -12,7 +12,7 @@ tags:
 ---
 ## 整体结构图：  
 
-&emsp;&emsp;kafka从整体上来看，是一种无主的服务，每个消息通过内部Topic路由，路由到主partition中去，也即高可用是用过内部partition的主从副本模式而不是整个服务主从模式来先实现。  
+&emsp;&emsp;kafka从整体上来看，是一种无主的(节点之间相互协调管理)服务，每个消息通过内部Topic路由，路由到主partition中去，也即高可用是用过内部partition的主从副本模式而不是整个服务主从模式来先实现。  
 ![kafka结构图示意图](https://raw.githubusercontent.com/kangzhihu/images/master/kafka%E7%BB%93%E6%9E%84%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg)  
 &emsp;&emsp;图中有两个topic，topic 0有两个partition，topic 1有一个partition，三副本备份。可以看到consumer gourp 1中的consumer 2没有分到partition处理。    
 &emsp;&emsp;kafka的数据，实际上是以文件的形式存储在文件系统的。topic下有Partition，同一Topic下的不同分区包含的消息是不同的。partition下有segment，segment是实际的一个个文件，topic和partition都是抽象概念。每个segment文件大小相等，文件名以这个segment中最小的offset命名，文件扩展名是.log；segment对应的索引的文件名字一样，扩展名是.index。   
@@ -24,7 +24,7 @@ tags:
 - **可以将Topic理解为逻辑表，而Partition理解为物理库（分库），segment理解为具体的物理表。**
 - kafka的消息为k,v键值对形式，其中key也是默认为null。      
 - 在默认情况下，随机发送到一个Partition分区下。在参数”metadata.max.age.ms”的时间范围内随机选择一个时间段值，在这个时间段内，如果 key 为 null，则只会一直发送到唯一固定分区。这个时间段值默认情况下是 10 分钟更新一次。  
-- 在key不为null时，若不指定分区，则这种情况下其通过keyhash取模/partition数量(可以自定义实现Partitioner接口)来决定存放在具体的哪个Partition 。 
+- 在key不为null时，若不指定分区，则这种情况下其通过key hash取模/partition数量(可以自定义实现Partitioner接口)来决定存放在具体的哪个Partition 。 
 - 如果既没有指定分区，且消息的key也是空，则用轮询的方式选择一个分区。
 
 ### 消费端  
@@ -90,7 +90,7 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 
 ### Offset管理
 
-&emsp;&emsp;Kafka中的每个partition都由一系列有序的、不可变的消息组成，这些消息被连续的追加到partition中。partition中的每个消息都有一个连续的序号，用于partition唯一标识一条消息。**Offset从语义上来看拥有两种：Current Offset和Committed Offset。**
+&emsp;&emsp;Kafka中的每个partition都由一系列有序的、不可变的消息组成，这些消息被连续的追加到partition中，对于某个partition，其维护了自身的一个自增offset。partition中的每个消息都有一个连续的序号，用于partition唯一标识一条消息。**Offset从语义上来看拥有两种：Current Offset和Committed Offset。**
 
 - Current Offset    
   &emsp;&emsp;其存储在Consumer端，每表示Consumer希望收到的下一条消息的序号，仅在pull方式中使用，例如，Consumer第一次使用pull拉取了20条数据，则Consumer本地记录了Current Offet被设置为20，下次拉取时将20传递给kafka。
@@ -98,19 +98,19 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 - Committed Offset    
 &emsp;&emsp;保存在Broker上，它表示Consumer已经确认消费过的消息的序号，当消费者获取消息后宕机等不确认，则Committed Offset保持不变。
 
-&emsp;&emsp;**Committed Offset主要用于Consumer Rebalance。**在Consumer Rebalance的过程中，一个partition被分配给了一个Consumer，那么这个Consumer该从什么位置开始消费消息呢？答案就是Committed Offset，当新启动时，kafka返回从Committed Offset开始的消息，这样避免重复消费。
+&emsp;&emsp;**Committed Offset主要用于Consumer Rebalance**。在Consumer Rebalance的过程中，一个partition被分配给了一个Consumer，那么这个Consumer该从什么位置开始消费消息呢？答案就是Committed Offset，当新启动时，kafka返回从Committed Offset开始的消息，这样避免重复消费。
 
 #### Committed offset维护
+![Offset示例](https://raw.githubusercontent.com/kangzhihu/images/master/kafka-offset.png)
 
 &emsp;&emsp;kafka消费者会保存自己的消费进度，也就是offset。存储的位置根据消费组选用的kafka api不同而不一样。
 
 - javaapi：消费者的offset会更新到zookeeper中；
-- kafka默认的api：消费者的offset会更新到一个kafka自带的topic【\__consumer_offsets】下面。提供了一个**__consumer_offsets** 的一个topic，把offset信息写入到这个topic 中。**__consumer_offsets 一一的保存了每个 consumer group某一时刻提交的 offset 信息(消费确认)**。__consumer_offsets 默认有50 个分区，每个消费组offset信息存储所在分区对应关系计算公式：
-
-````
+- kafka默认的api：消费者的offset会更新到一个kafka自带的topic【\__consumer_offsets】下面。提供了一个**__consumer_offsets** 的一个topic，把offset信息写入到这个topic 中。**__consumer_offsets 一一的保存了每个 consumer group某一时刻提交的 offset 信息(消费确认)**。__consumer_offsets 默认有50 个分区，每个消费组offset信息存储所在分区对应关系计算公式：  
+````java
 int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
-其中，groupMetadataTopicPartitionCount默认为50.
-若value为15，那么表示__consumer_offsets-15，即其第15个分区保存了groupid该分组的offset信息。
+//其中，groupMetadataTopicPartitionCount默认为50.
+//若value为15，那么表示__consumer_offsets-15，即其第15个分区保存了groupid该分组的offset信息。
 ````
 &emsp;&emsp;由于一个partition只能固定的交给一个消费者组中的一个消费者消费，因此Kafka保存offset时并不直接为每个消费者保存，而是以groupid-topic-partition -> offset的方式保存。offset日志格式为:
 
@@ -123,11 +123,15 @@ int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
 更详细参考请见：[Kafka offset管理](https://www.jianshu.com/p/449074d97daf)
 
 ### Metadata 
+>broker是有状态的服务：每台broker在内存中都维护了集群上所有节点和topic分区的状态信息--Metadata
 
-简单理解就是Topic/Partition 和 broker 的映射关系，每一个 topic 的每一个 partition，需要知道对应的 broker 列表是什么，leader
+&emsp;&emsp;简单理解就是Topic/Partition 和 broker 的映射关系，每一个 topic 的每一个 partition，需要知道对应的 broker 列表是什么，leader
 是谁、follower 是谁。这些信息都是存储在 Metadata 这个类中。  
+1. clients并不是时刻都需要去请求元数据的，且会缓存到本地；
+2. 即使获取的元数据无效或者过期了，clients通常都有重试机制，可以去其他broker上再次获取元数据; 
+3. cache更新是很轻量级的，仅仅是更新一些内存中的数据结构，不会有太大的成本。因此我们还是可以安全地认为每台broker上都有相同的cache信息。  
 
-
+只要集群中有broker或分区数据发生了变更就需要更新这些cache,比如当有新的borker加入时，其它broker监听Zookeeper的controller就会立即感知这台新broker的加入去更新缓存。  
 ###  消息存储原理
 #### LogSegment
 &emsp;&emsp;我们知道Topic是以Partition为基本的存储单元存放在Broker中，其实在实际的物理存储中，一个Partition log日志文件被划分为多个LogSegment。LogSegment也为一个逻辑单元，其由四部分组成：  
@@ -147,10 +151,10 @@ Question：
 &emsp;&emsp;2、为什么index文件中offset和partition都是有顺增长的：这个很好理解，offset是Partition的整体自增键，每来一条消息该Partition的offset自增一次，同样，partition对应了物理磁盘的页，顺序存放数据，所以页号也是自增的。 
 
 #### Partition中如何通过offset查找具体的message
-&emsp;&emsp;先通过二分查找算法在.index文件中快速定位到具体的position(YYY)，也是用二分查找找到offset小于或者等于指定offset的索引条目中最大的那个offset。再通过查找到的position到.log文件中在value=“partition(YYY)”查找对应的消息偏移量：msg-offset值，该值即为具体的消息内容。为啥顺序查找：可以简单理解partition为磁盘页(ByteBuffer)地址，该地址上存储了多个offset对应的消息，所以先定位到具体的页地址，然后在物理页中顺序查找。    
+&emsp;&emsp;先通过二分查找算法在.index文件中快速定位到具体的磁盘偏移量position(YYY)，也是用二分查找找到offset小于或者等于指定offset的索引条目中最大的那个offset。再通过查找到的position到.log文件中在value=“partition(YYY)”查找对应的消息偏移量：msg-offset值，该值即为具体的消息内容。为啥顺序查找：可以简单理解partition为磁盘页(ByteBuffer)地址，该地址上存储了多个offset对应的消息，所以先定位到具体的页地址，然后在物理页中顺序查找。    
 
 #### 日志压缩策略
-&emsp;&emsp;开启 kafka 的日志压缩功能，服务端会在后台启动启动Cleaner 线程池，定期将相同的 key 进行合并，只保留最新的 value 值。比如：对弈log文件中存在offset=1和offset=5的两个相同key的message，在消费者只关心 key 对应的最新的 value情况下，offset=1对应的消息内容将被清理掉。    
+&emsp;&emsp;开启 kafka 的日志压缩功能，服务端会在后台启动启动Cleaner 线程池，定期将相同的 key 进行合并，只保留最新的 value 值。比如：对于log文件中存在offset=1和offset=5的两个相同key的message，在消费者只关心 key 对应的最新的 value情况下，offset=1对应的消息内容将被清理掉。    
 
 ### replica冗余备份
 &emsp;&emsp;Partition在很大程度上能够提高kafka的性能，但是很明显，对于一个分区来说存在着单点问题，一旦当前分区出现问题不可用，那么这部分消息将不可被消费。kafka通过Replica通副本机制来实现冗余备份提高kafka的可用性。  
