@@ -127,7 +127,7 @@ int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
 
 &emsp;&emsp;简单理解就是Topic/Partition 和 broker 的映射关系，每一个 topic 的每一个 partition，需要知道对应的 broker 列表是什么，leader
 是谁、follower 是谁。这些信息都是存储在 Metadata 这个类中。  
-1. clients并不是时刻都需要去请求元数据的，且会缓存到本地；
+1. 生产者/消费者的clients并不是时刻都需要去请求元数据的，且会缓存到本地；
 2. 即使获取的元数据无效或者过期了，clients通常都有重试机制，可以去其他broker上再次获取元数据; 
 3. cache更新是很轻量级的，仅仅是更新一些内存中的数据结构，不会有太大的成本。因此我们还是可以安全地认为每台broker上都有相同的cache信息。  
 

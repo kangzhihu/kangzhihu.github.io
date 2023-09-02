@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "中间件-RocketMQ"
-subtitle: '中间件RocketMQ之Offset'
+subtitle: '中间件RocketMQ之Offset(一)'
 author: "Kang"
 date: 2020-01-15 13:26:04
 header-img: "img/post-head-img/gingko-tree.jpg"

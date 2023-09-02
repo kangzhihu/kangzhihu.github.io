@@ -19,7 +19,7 @@ tags:
 Push方式坏处：  
 &emsp;&emsp;如果消费者的处理消息的能力很弱(一条消息需要很长的时间处理)，而消息中间件不断地向消费者Push消息，消费者的缓冲区可能会溢出。       
 Pull方式坏处：  
-&emsp;&emsp;Pull有个缺点是，如果broker没有可供消费的消息，将导致consumer不断在循环中轮询，直到新消息到达。
+&emsp;&emsp;Pull有个缺点是，如果broker没有可供消费的消息，将导致consumer不断在循环中轮询，直到新消息到达。针对这一点，如Kafka 的消费者在消费数据时会传入一个时长参数 timeout，如果当前没有数据可供消费，consumer链接会等待一段时间之后再返回，这段时长即为 timeout。
 
 ####  ActiveMQ消费模型
 &emsp;&emsp;ActiveMQ同时支持Push和Pull两种方式。   

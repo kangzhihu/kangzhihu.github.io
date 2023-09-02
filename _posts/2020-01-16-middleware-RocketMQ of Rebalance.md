@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "中间件-RocketMQ"
-subtitle: '中间件RocketMQ之Rebalance'
+subtitle: '中间件RocketMQ之Rebalance（二）'
 author: "Kang"
 date: 2020-01-16 10:26:04
 header-img: "img/post-head-img/ravine-stream.jpg"
