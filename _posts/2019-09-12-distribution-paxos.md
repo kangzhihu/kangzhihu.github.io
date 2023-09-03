@@ -8,6 +8,8 @@ header-img: "img/post-head-img/network-3396348_1280.jpg"
 catalog: true
 tags:
   - 分布式
+  - Paxos
+  - Raft
 ---
 ## 推荐参阅列表
 1. [推荐阅读-paxos生活化案例讲解](https://blog.csdn.net/omashion/article/details/54317871)
