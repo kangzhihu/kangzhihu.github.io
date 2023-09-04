@@ -48,7 +48,7 @@ Javascript  |       |        |   X
 -------------------------------------
 ```
 这种由属性值来确定记录的位置的结构就是倒排索引。带有倒排索引的文件我们称为倒排文件。上面的内容转换倒排索引的结构如下图所示：
-![es倒排索引示例](https://raw.githubusercontent.com/kangzhihu/images/master/es-倒排索引示例.jpg)
+![es倒排索引示例](https://raw.githubusercontent.com/kangzhihu/images/master/es-倒排索引示例.png)
 核心术语：
 - 词条（Term）： 索引里面最小的存储和查询单元，对于英文来说是一个单词，对于中文来说一般指分词后的一个词。
 - 词典（Term Dictionary）： 或字典，是词条 Term 的集合。单位是单词，单词词典是由文档集合中出现过的所有单词构成的字符串集合，单词词典内每条索引项记载单词本身的一些信息以及指向“倒排列表”的指针。
