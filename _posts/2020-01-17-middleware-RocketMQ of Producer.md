@@ -87,8 +87,17 @@ public class MessageQueue implements Comparable<MessageQueue>, Serializable {
 
 最后通过MessageQueue中的信息获取brokerAddr后，最终调用MQClientAPIImpl#sendMessage将消息发送出去。
 
+### 顺序性投递
 
+##### 发送端有序
+因为RocketMQ支持生产者在投放消息的时候自定义投放策略，我们实现一个MessageQueueSelector接口，使用Hash取模法(如ID%队列数量)来保证同一个业务(比如订单)在同一个队列中就行了。  
+> 存在问题：当Broker有变动的时候，可能会照成短暂的部分数据的无序性。
 
+##### 消费端有序
+&emsp;&emsp;RockerMQ的MessageListener回调函数提供了两种消费模式，有序消费模式MessageListenerOrderly和并发消费模式MessageListenerConcurrently。  
+&emsp;&emsp;**实际上，每一个消费者的的消费端都是采用线程池实现多线程消费的模式，即消费端是多线程消费。虽然MessageListenerOrderly被称为有序消费模式，但是仍然是使用的线程池去消费消息。**  
+&emsp;&emsp;**MessageListenerConcurrently是拉取到新消息之后就提交到线程池去消费，而MessageListenerOrderly则是通过加分布式锁和本地锁保证同时只有一条线程去消费一个队列上的数据。**  
+> 顺序性消费一个很大的弊端是使用了很多锁，而且当前者消费失败后，会阻塞后续的消费。
 ### 路由表管理
 
 &emsp;&emsp;接上面的路由表讲解。
