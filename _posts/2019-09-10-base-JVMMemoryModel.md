@@ -27,6 +27,9 @@ Full GC ：发生于整个堆空间
 方法区和永久代的关系：方法区和永久代/元数据区的关系很像Java中接口和类的关系，类实现了接口，而永久代就是HotSpot虚拟机对虚拟机规范中方法区的一种实现方式。    
 
 ## JVM内存模型
+借用网上一幅图：
+![JVM内存模型全部](https://raw.githubusercontent.com/kangzhihu/images/master/JVM-全图.png)
+
 &emsp;&emsp;JVM内存由五大块组成：程序计数器，方法区、本地方法栈、堆、栈。 
 ![JVM内存模型](https://raw.githubusercontent.com/kangzhihu/images/master/%E5%9F%BA%E7%A1%80-JVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.png)    
 &emsp;&emsp;上图为一个简单的JVM内存模型，其中，methodOne调用了methodTwo
