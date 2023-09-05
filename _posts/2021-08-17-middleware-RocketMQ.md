@@ -11,7 +11,7 @@ tags:
   - MQ
   - RocketMQ
 ---
-![RocketMq整体框架图](https://raw.githubusercontent.com/kangzhihu/images/master/RocketMQ框架图.jpg)
+![RocketMq整体框架图](https://raw.githubusercontent.com/kangzhihu/images/master/RocketMQ%E6%A1%86%E6%9E%B6%E5%9B%BE.jpg)  
 1、NameServer 之间互不通信，无法感知对方的存在。  
 2、Broker 服务会与每台 NameServer 保持长连接,每30s向 NameServer 发送心跳包。  
 3、生产者&消费者与 NameServer 集群中的一台服务器建立长连接，并持有整个 NameServer 集群的列表，且定期去拉取主题的路由信息。 
@@ -51,7 +51,12 @@ tags:
 ##### 消息消费
 &emsp;&emsp;客户端发起消息消费请求，请求码为RequestCode.PULL_MESSAGE，对应的处理类为PullMessageProcessor。  
 &emsp;&emsp;Broker 在收到客户端的请求之后，会根据topic和queueId、消息消费进度(ConsumeQueue 逻辑偏移量)，通过逻辑偏移量logicOffset* 20可以快速定位到在哪个ConsumeQueue的哪个起始位置，然后读取20个字节即得到了一个条目。  
-
+&emsp;&emsp;Pull模式下，PullMessageService 拉取完一批消息后，将消息提交到线程池后会“马不蹄停”去拉下一批消息，如果此时消息消费线程池处理速度很慢，处理队列中的消息会越积越多。
+##### 消息积压  
+&emsp;&emsp;消费端的限流机制:
+- 消息堆积数量控制：当消息消费处理队列中的消息条数超过1000条会触发消费端的流控，其具体做法是放弃本次拉取动作，并且延迟50ms后将放入该拉取任务放入到pullRequestQueue中，每1000次流控会打印一次消费端流控日志。  
+- 消息堆积大小：处理队列中堆积的消息总内存大小超过100M，同样触发一次流控。  
+通过调整发送方速率、调整分区数提高并行处理能力、监控和告警、压力测试、定期审查、容量规划、消费端异常处理等手段去规避积压。  
 
 ### 文件清理
 &emsp;&emsp;broker 文件清理主要是清理commitlog ， ConsumeQueue ， indexFile。RocketMQ默认是清理72小时之前的消息， 默认是凌晨4点触发清理， 除非磁盘空间占用到75% 以上了。  
