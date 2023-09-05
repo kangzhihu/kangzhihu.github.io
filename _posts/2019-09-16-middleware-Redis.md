@@ -118,7 +118,9 @@ Redis对于过期键有三种清除策略：
 &emsp;&emsp;在哨兵模式下，基本上能实现高可用和读写分离，但是这种模式下所有机器存储的数据完全相同，很浪费内存，所以将Redis改进为分布式存储，每个节点基本上数据不重复。  
 ![Redis-Cluster集群模式](https://raw.githubusercontent.com/kangzhihu/images/master/redis-cluster.png)  
 &emsp;&emsp;如上图所示，每个工作节点是一个单独的Master，为了提高节点的高可用，节点内部也是一个哨兵模式结构。    
-&emsp;&emsp;在操作数据时，<font color="green">客户端先根据key CRC算法后对槽(slot,长度16384)取模，然后根据node与Master节点的对应关系，查找到具体负责的Master节点。</font>Master根据自己维护的位序列校验确实是自己负责的槽，那么就提供服务。    
+&emsp;&emsp;在操作数据时，<font color="green">客户端先根据key CRC算法后对槽[哈希槽](slot,长度16384)取模，然后根据node与Master节点的对应关系，查找到具体负责的Master节点。</font>Master根据自己维护的位序列校验确实是自己负责的槽，那么就提供服务。  
+> 使用了一致性 Hash算法,CRC16校验后对16384取模来决定放置哪个槽，这些值按照顺序在环上排列，这样节点数目发生改变时，尽可能少的数据迁移，减少数据变动量和对资源的占用。  
+
 &emsp;&emsp;在客户端会缓存node-slot信息，而所有master节点在 Redis Cluster中的实现时，都存有所有的路由信息。当客户端的key 经过hash运算，发送slot 槽位不在本节点的时候：  
 - （1）如果是非集群方式连接，则直接报告错误给client，告诉它应该访问集群中那个IP的master主机。
 - （2）如果是集群方式连接，则将客户端重定向到正确的节点上。
