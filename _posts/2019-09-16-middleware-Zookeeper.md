@@ -16,8 +16,11 @@ tags:
 
 ### 集群
 &emsp;&emsp;集群：貌似只能一个leader，多个follower  
-&emsp;&emsp;首先要注意的Zab和Paxos算法的区别 。Paxos算法：用于构建一个分布式一致性状态系统，保证系统数据的一致性。Zab算法：则主要用于构建一个高可用的分布式主备系统。  
-&emsp;&emsp;集群数量为奇数(2N+1)原因：一个ZooKeeper集群如果要对外提供可用的服务，那么集群中必须要有过半的机器正常工作并且彼此之间能够正常通信。对于5台和6台来说，都必须至少3台机器存活，所以为了节约资源，一半选择5台即可；  
+&emsp;&emsp;首先要注意的Zab和Paxos算法的区别 。
+ - Paxos算法：用于构建一个分布式一致性状态系统，保证系统数据的一致性。
+ - Zab算法：则主要用于构建一个高可用的分布式主备系统。  
+
+&emsp;&emsp;集群数量为奇数(2N+1)原因：一个ZooKeeper集群如果要对外提供可用的服务，那么集群中必须要有过半的机器正常工作并且彼此之间能够正常通信。对于5台和6台来说，都必须至少3台机器存活，所以为了节约资源，一般选择5台即可；  
 
 ### 集群读写
 &emsp;&emsp;写请求只能在leader进行，客户端连接到任意节点后，若为写请求，则follower将写请求转发给Leader节点。-- **转发会不会造成Leader资源紧张？？**     
@@ -34,8 +37,8 @@ tags:
 #### Zab协议
 &emsp;&emsp;Zookeeper角色与状态：
 - 角色：leader,follower,observer
-- 状态：leading,following,observing,looking
-
+- 状态：leading,following,observing,looking  
+  follower和observer都负责处理客户端的读请求，写转发至leader节点以及同步leader的广播数据、状态，但是observer不会参与数据确认和选举的投票。
 ##### ZXID
 &emsp;&emsp;ZooKeeper会为每一个事务生成一个唯一且递增长度为64位的ZXID,ZXID由两部分组成：低32位表示计数器(counter)和高32位的纪元号(epoch)。epoch为当前leader在成为leader的时候生成的，且保证会比前一个leader的epoch大，在其为Leader期间，Epoch保持不变。  
 &emsp;&emsp;ZXID结构示意图如下：   
@@ -74,6 +77,5 @@ tags:
 &emsp;&emsp;Observer是一个类Follower节点，但是其不参与任何阶段的投票，其可以有以下两个作用：  
 1. 作为读节点。Observer不参与投票确认，所以其增减对整个集群的结构没影响，但是因为也能接收客户端的读写请求并将写请求转发给Leader节点，所以Observer很适合在有限影响集群性能的情况下提供读服务。  
 2. 作为数据中心：Observer的数据来自于Leader在commit成功后的INFORM消息，所以可以作为一个单独的数据中心(备份)对外服务，很适合用于做异地数据中心；  
-
 
   
