@@ -13,6 +13,10 @@ tags:
 ### 整体使用原则
 &emsp;&emsp;个人理解：Redis其实只适合作为缓存，而不是数据库或是存储。它的持久化方式适用于救救急啥的，不太适合当作一个普通功能来用
 
+客户端与 redis 的一次通信过程：
+![Redis-Cluster集群模式](https://raw.githubusercontent.com/kangzhihu/images/master/redis-通讯模型.png)
+
+
 ### Redis常见应用场景
 1、会话缓存   
 2、消息队列   
