@@ -44,6 +44,9 @@ lpush key value1 value2 .....
 &emsp;&emsp;通常使用在类似排行榜场景下：
 1. 外部大数据排序，例如最新消息排序，每次都将最新小消息使用lpush放在最前面。
   
+##### zset
+![Redis-跳表](https://raw.githubusercontent.com/kangzhihu/images/master/redis-zset-跳表.jpeg)  
+查找时可以进行二分查找的有序链表。  
 
 ### 分布式锁的基本特性
 1. 互斥性，只能加锁者释放锁；
