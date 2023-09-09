@@ -106,12 +106,16 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 &emsp;&emsp;kafka消费者会保存自己的消费进度，也就是offset。存储的位置根据消费组选用的kafka api不同而不一样。
 
 - javaapi：消费者的offset会更新到zookeeper中；
-- kafka默认的api：消费者的offset会更新到一个kafka自带的topic【\__consumer_offsets】下面。提供了一个**__consumer_offsets** 的一个topic，把offset信息写入到这个topic 中。**__consumer_offsets 一一的保存了每个 consumer group某一时刻提交的 offset 信息(消费确认)**。__consumer_offsets 默认有50 个分区，每个消费组offset信息存储所在分区对应关系计算公式：  
+- kafka默认的api：消费者的offset会更新到一个kafka自带的topic【\__consumer_offsets】下面。提供了一个**__consumer_offsets** 的一个topic，把offset信息写入到这个topic 中。**__consumer_offsets 一一的保存了每个 consumer group某一时刻提交的 offset 信息(消费确认)**。__consumer_offsets 默认有50 个分区，每个消费组offset信息存储所在分区对应关系计算公式：
+
 ````java
 int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
 //其中，groupMetadataTopicPartitionCount默认为50.
 //若value为15，那么表示__consumer_offsets-15，即其第15个分区保存了groupid该分组的offset信息。
 ````
+&emsp;&emsp;consumer 消费了数据之后，**每隔一段时间**（定时定期），会把自己消费过的消息的 offset 提交一下，
+![Offset示例](https://raw.githubusercontent.com/kangzhihu/images/master/kafka-offset同步.png)
+
 &emsp;&emsp;由于一个partition只能固定的交给一个消费者组中的一个消费者消费，因此Kafka保存offset时并不直接为每个消费者保存，而是以groupid-topic-partition -> offset的方式保存。offset日志格式为:
 
 ```
