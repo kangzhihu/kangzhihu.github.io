@@ -4,7 +4,7 @@ title: "DDD"
 subtitle: '架构-DDD简介'
 author: "Kang"
 date: 2023-4-6 19:51:07
-header-img: "img/post-head-img/arthas.jfif"
+header-img: "img/post-head-img/thumb-1920-418965.png"
 catalog: true
 tags:
   - 架构
