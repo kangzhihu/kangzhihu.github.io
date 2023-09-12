@@ -53,7 +53,7 @@ lpush key value1 value2 .....
 2. 无死锁;  
 3. 高可用;  
 4. 重入性;  
-&emsp;&emsp;Redis中有复杂的Set指令配合Lua脚本来实现分布式锁，但推荐直接使用RedLock(需要自己设置超时时间)或者Hedission(子线程更新过期时间)。
+&emsp;&emsp;Redis中有复杂的Set指令配合Lua脚本来实现分布式锁，但推荐直接使用RedLock(需要自己设置超时时间)或者Redission(子线程更新过期时间)。
 
 ### Redis过期key清理及内存满
 &emsp;&emsp;如果redis达到设置的内存上限，Redis的写命令会返回错误的信息(命令正常返回)，所以推荐作为缓存使用，设置淘汰算法，当Redis达到内存上限时会执行淘汰策略。  
