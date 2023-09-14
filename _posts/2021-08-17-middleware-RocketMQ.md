@@ -14,9 +14,10 @@ tags:
 ![RocketMq整体框架图](https://raw.githubusercontent.com/kangzhihu/images/master/RocketMQ%E6%A1%86%E6%9E%B6%E5%9B%BE.jpg)  
 1、NameServer 之间互不通信，无法感知对方的存在。  
 2、Broker 服务会与每台 NameServer 保持长连接,每30s向 NameServer 发送心跳包。  
-3、生产者&消费者与 NameServer 集群中的一台服务器建立长连接，并持有整个 NameServer 集群的列表，且定期去拉取主题的路由信息。 
+3、生产者&消费者与 NameServer 集群中的一台服务器建立长连接，并持有整个 NameServer 集群的列表，且定期去拉取主题的路由信息。   
+4、rocketMq通过自身的namesrv进行协调，当一个broker挂了，会把当前请求迁移到其他Broker上去，而不是slave升级为Master  
 > 所以都不会立即感知到变更；  
-> 发送的消息中已经携带了QueueId，标识当前消息会被放到哪个ConsumeQueue中。  
+> 发送的消息中已经携带了QueueId，标识当前消息会被放到哪个ConsumeQueue中。
 
 ### 消息存储文件设计
 &emsp;&emsp;消息存储主要体现在三个文件中：CommitLog（真正存储消息体的地方）、ConsumeQueue（某个Topic下某个Queue的消息索引信息）、IndexFile（通过key或时间区间来查询消息的索引文件）。  

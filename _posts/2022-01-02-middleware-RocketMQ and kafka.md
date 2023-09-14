@@ -17,16 +17,16 @@ tags:
 
 ##### 数据可靠性
 RocketMQ：支持异步实时刷盘、同步刷盘、同步复制、异步复制。
-kafka：使用异步刷盘方式，异步复制/同步复制。
-总结：
-1、RocketMQ支持kafka所不具备的“同步刷盘”功能，在单机可靠性上比kafka更高，不会因为操作系统Crash而导致数据丢失。  
+kafka：使用异步刷盘方式，异步复制/同步复制。  
+总结：  
+1、RocketMQ支持kafka所不具备的“同步刷盘”功能，在单机可靠性上比kafka更高，不会因为操作系统Crash而导致数据丢失。    
 2、kafka的同步replication理论上性能低于RocketMQ的replication，这是因为kafka的数据以partition为单位，这样一个kafka实例上可能多上百个partition。而一个RocketMQ实例上**只有一个partition**，RocketMQ可以充分利用IO组的commit机制，批量传输数据。同步replication与异步replication相比，同步replication性能上损耗约20%-30%。  
 
 一句话概括：RocketMQ新增了同步刷盘机制，保证了可靠性；一个RocketMQ实例只有一个partition, 在replication时性能更好。  
 
 
 ##### 性能对比
-1、kafka单机写入TPS月在百万条/秒，消息大小为10个字节。  
+1、kafka单机写入TPS约在百万条/秒，消息大小为10个字节。  
 2、RocketMQ单机写入TPS单实例约7万条/秒，若单机部署3个broker，可以跑到最高12万条/秒，消息大小为10个字节。  
 总结：
  - kafka的单机TPS能跑到每秒上百万，是因为Producer端将多个小消息合并，批量发向broker。  
@@ -61,6 +61,17 @@ kafka：使用异步刷盘方式，异步复制/同步复制。
 1、kafka不支持分布式事务消息。  
 2、RocketMQ支持分布式事务消息。  
 
+##### 集群处理
+1、kafka通过zookeeper来进行协调,具备选举能力 (趋向于高可用性,易维护 )  
+```shell
+1. 某个partition的master挂了，该partition对应的某个slave会升级为主对外提供服务
+2. 缺陷: 异步Replication下自动选主数据可能丢失
+```
+2、rocketMq通过自身的namesrv进行协调, 不具备选主能力 (去向于数据一致性, 数据不丢失)   
+```shell
+1. Mq只能保证当一个broker挂了，把原本写到这个broker的请求迁移到其他broker上面，而并不是这个broker对应的slave升级为主
+2. 维护上没有那么方便
+```
 
 ##### 消息回溯
 1、kafka可按照消息的offset来回溯消息。  
