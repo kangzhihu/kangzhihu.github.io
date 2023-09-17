@@ -24,7 +24,8 @@ tags:
 select * from table where ?;
 ```
 #### 当前读(写锁)
-&emsp;&emsp;读取的是最新版本,并在读取之后，还需要保证其他并发事务不能修改当前记录，对读取记录加锁。其中，除了第一条语句，对读取记录加S锁 (共享锁)外，其他的操作，都加的是X锁 (排它锁，注意不是写锁，排它锁其它事务也不能读)。UPDATE、DELETE、INSERT、SELECT …  LOCK IN SHARE MODE、SELECT … FOR UPDATE是当前读。<font color="red">InnoDB默认涉及到数据变更操作和手动SELECT就是快照读。</font>      
+&emsp;&emsp;直接从磁盘或 buffer 中获取当前内容的最新数据，读到什么就是什么。并在读取之后，还需要保证其他并发事务不能修改当前记录，对读取记录加锁。  
+下面👇的示例中，除了第一条语句，对读取记录加S锁 (共享锁)外，其他的操作，都加的是X锁 (排它锁，注意不是写锁，排它锁其它事务也不能读)。UPDATE、DELETE、INSERT、SELECT …  LOCK IN SHARE MODE、SELECT … FOR UPDATE是当前读。<font color="red">InnoDB默认涉及到数据变更操作和手动SELECT就是快照读。</font>      
 ```sql
 select * from table where ? lock in share mode;
 select * from table where ? for update;
@@ -36,6 +37,8 @@ delete from table where ?;
 1. Mysql Server将更新时携带条件的where进行提取，将提取语句投递给InnoDB引擎，InnoDB将返回符合条件的第一条数据，并将当前数据加排它锁(X锁)；--当前读。  
 2. MySQL Server收到这条加锁的记录之后，会再发起一个Update请求，更新这条记录。  
 3. 一条记录操作完成，再读取下一条记录，直至没有满足条件的记录为止。  
+
+![读取案例](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-读取案例.png)
 
 [阅读-where 提取参考](http://hedengcheng.com/?p=577)
 
