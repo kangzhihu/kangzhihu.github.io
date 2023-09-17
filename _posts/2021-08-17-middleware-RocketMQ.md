@@ -11,6 +11,8 @@ tags:
   - MQ
   - RocketMQ
 ---
+> 事务管理，异步解耦，削峰填谷，数据同步等应用场景
+
 ![RocketMq整体框架图](https://raw.githubusercontent.com/kangzhihu/images/master/RocketMQ%E6%A1%86%E6%9E%B6%E5%9B%BE.jpg)  
 1、NameServer 之间互不通信，无法感知对方的存在。  
 2、Broker 服务会与每台 NameServer 保持长连接,每30s向 NameServer 发送心跳包。  
