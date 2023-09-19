@@ -17,7 +17,7 @@ tags:
 1、NameServer 之间互不通信，无法感知对方的存在。  
 2、Broker 服务会与每台 NameServer 保持长连接,每30s向 NameServer 发送心跳包。  
 3、生产者&消费者与 NameServer 集群中的一台服务器建立长连接，并持有整个 NameServer 集群的列表，且定期去拉取主题的路由信息。   
-4、rocketMq通过自身的namesrv进行协调，当一个broker挂了，会把当前请求迁移到其他Broker上去，而不是slave升级为Master  
+4、rocketMq通过自身的NameServer进行协调，当一个broker挂了，会把当前请求迁移到其他Broker上去，而不是slave升级为Master。   
 > 所以都不会立即感知到变更；  
 > 发送的消息中已经携带了QueueId，标识当前消息会被放到哪个ConsumeQueue中。
 
@@ -26,6 +26,10 @@ tags:
 &emsp;&emsp;路由发现不是实时的，路由变化后，NameServer不主动推给客户端，等待producer定期拉取最新路由信息。当路由发生变化时通过在消息**发送端的容错机制**来保证消息发送的高可用。  
 &emsp;&emsp;多个NameServer服务器之间不进行通信，这样路由信息发生变化时，各个NameServer服务器之间数据可能不是完全相同的，也是通过发送端的容错机制保证消息发送的高可用。  
 &emsp;&emsp;NameServer每隔10s扫描BrokerLiveTable，连续120s没收到心跳包，则移除该Broker并关闭socket连接，broker正常下线也会触发路由剔除；  
+
+### Controller模式
+&emsp;&emsp;Controller单独部署或者内嵌在NameServer下，Broker 通过与 Controller 的交互完成 Master 的选举支持主从的自动主从切换。
+&emsp;&emsp;Controller会监听每个 Broker 的连接通道，当Broker发生变动后，就会判断该 Broker 是否为 Master，如果是，则会触发选主的流程。选举 Master 的⽅式⽐较简单，我们只需要在该组 Broker 所对应的 SyncStateSet 列表中，挑选⼀个出来成为新的 Master 即可，并通过 DLedger 共识后应⽤到内存元数据，最后将结果通知对应的Broker副本组。  
 
 ### 消息存储文件设计
 &emsp;&emsp;消息存储主要体现在三个文件中：CommitLog（真正存储消息体的地方）、ConsumeQueue（某个Topic下某个Queue的消息索引信息）、IndexFile（通过key或时间区间来查询消息的索引文件）。  
