@@ -10,6 +10,11 @@ tags:
   - 中间件
   - MQ
 ---
+
+&emsp;&emsp;kafka利用zk临时节点特性从所有broker中选举出一个controller节点，controller节点会负责一些管理工作，如监听broker变化、监听topic变化、监听分区变化，管理分区信息等。  
+&emsp;&emsp;kafka对topic分区采用多副本机制来保障消息存储的可靠性，leader分区负责读写，follower仅负责从leader拉取数据做同步保障。因此分区的数量必须小于等于broker的数量且kafka会尽量保障每个broker所负责的分区数量达到一个均衡。当leader 异常时，kafka会从与leader保持同步度高的副本(ISR)中选举一个新的leader。并在进行消息同步处理之后继续向外提供服务。    
+
+
 ## 整体结构图：  
 
 &emsp;&emsp;kafka从整体上来看，是一种无主的(节点之间相互协调管理)服务，每个消息通过内部Topic路由，路由到主partition中去，也即高可用是用过内部partition的主从副本模式而不是整个服务主从模式来先实现。  

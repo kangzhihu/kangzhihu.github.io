@@ -98,6 +98,9 @@ public class MessageQueue implements Comparable<MessageQueue>, Serializable {
 &emsp;&emsp;**实际上，每一个消费者的的消费端都是采用线程池实现多线程消费的模式，即消费端是多线程消费。虽然MessageListenerOrderly被称为有序消费模式，但是仍然是使用的线程池去消费消息。**  
 &emsp;&emsp;**MessageListenerConcurrently是拉取到新消息之后就提交到线程池去消费，而MessageListenerOrderly则是通过加分布式锁和本地锁保证同时只有一条线程去消费一个队列上的数据。**  
 > 顺序性消费一个很大的弊端是使用了很多锁，而且当前者消费失败后，会阻塞后续的消费。
-### 路由表管理
 
-&emsp;&emsp;接上面的路由表讲解。
+### NameServer
+![RocketMq-NameServer](https://raw.githubusercontent.com/kangzhihu/images/master/Rocketmq-nameserver.jpg)
+&emsp;&emsp;路由发现不是实时的，路由变化后，NameServer不主动推给客户端，等待producer定期拉取最新路由信息。当路由发生变化时通过在消息**发送端的容错机制**来保证消息发送的高可用。  
+&emsp;&emsp;多个NameServer服务器之间不进行通信，这样路由信息发生变化时，各个NameServer服务器之间数据可能不是完全相同的，也是通过发送端的容错机制保证消息发送的高可用。  
+&emsp;&emsp;NameServer每隔10s扫描BrokerLiveTable，连续120s没收到心跳包，则移除该Broker并关闭socket连接，broker正常下线也会触发路由剔除；  

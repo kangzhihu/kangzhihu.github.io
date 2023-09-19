@@ -21,6 +21,12 @@ tags:
 > 所以都不会立即感知到变更；  
 > 发送的消息中已经携带了QueueId，标识当前消息会被放到哪个ConsumeQueue中。
 
+### NameServer
+![RocketMq-NameServer](https://raw.githubusercontent.com/kangzhihu/images/master/Rocketmq-nameserver.jpg)
+&emsp;&emsp;路由发现不是实时的，路由变化后，NameServer不主动推给客户端，等待producer定期拉取最新路由信息。当路由发生变化时通过在消息**发送端的容错机制**来保证消息发送的高可用。  
+&emsp;&emsp;多个NameServer服务器之间不进行通信，这样路由信息发生变化时，各个NameServer服务器之间数据可能不是完全相同的，也是通过发送端的容错机制保证消息发送的高可用。  
+&emsp;&emsp;NameServer每隔10s扫描BrokerLiveTable，连续120s没收到心跳包，则移除该Broker并关闭socket连接，broker正常下线也会触发路由剔除；  
+
 ### 消息存储文件设计
 &emsp;&emsp;消息存储主要体现在三个文件中：CommitLog（真正存储消息体的地方）、ConsumeQueue（某个Topic下某个Queue的消息索引信息）、IndexFile（通过key或时间区间来查询消息的索引文件）。  
 全图：  
