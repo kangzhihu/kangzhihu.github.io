@@ -9,6 +9,7 @@ catalog: true
 tags:
   - 中间件
   - MQ
+  - Kafka
 ---
 
 &emsp;&emsp;kafka利用zk临时节点特性从所有broker中选举出一个controller节点，controller节点会负责一些管理工作，如监听broker变化、监听topic变化、监听分区变化，管理分区信息等。  

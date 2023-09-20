@@ -30,6 +30,7 @@ tags:
 ### Controller模式
 &emsp;&emsp;Controller单独部署或者内嵌在NameServer下，Broker 通过与 Controller 的交互完成 Master 的选举支持主从的自动主从切换。
 &emsp;&emsp;Controller会监听每个 Broker 的连接通道，当Broker发生变动后，就会判断该 Broker 是否为 Master，如果是，则会触发选主的流程。选举 Master 的⽅式⽐较简单，我们只需要在该组 Broker 所对应的 SyncStateSet 列表中，挑选⼀个出来成为新的 Master 即可，并通过 DLedger 共识后应⽤到内存元数据，最后将结果通知对应的Broker副本组。  
+&emsp;&emsp;DLedger 部署在每个Broker节点中，通过Raft协议去投票产生新的Master节点。[阅读参考](https://www.lmlphp.com/user/57922/article/item/2450770/)  
 
 ### 消息存储文件设计
 &emsp;&emsp;消息存储主要体现在三个文件中：CommitLog（真正存储消息体的地方）、ConsumeQueue（某个Topic下某个Queue的消息索引信息）、IndexFile（通过key或时间区间来查询消息的索引文件）。  
