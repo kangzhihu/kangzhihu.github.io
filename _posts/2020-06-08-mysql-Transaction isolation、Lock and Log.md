@@ -68,7 +68,7 @@ tags:
 ####  GAP间隙锁
 &emsp;&emsp;范围查询或者等值查询时，若记录不存在则退化为GAP锁；
 
-> 重要说明：<font color="red">**mysql默认的行锁是next-key锁。当使用唯一性索引等值查询匹配到记录时，退化为记录锁,当查找不到数据时，退化为Gap Lock。**</font>
+> 重要说明：<font color="red">**mysql默认的行锁是next-key锁。当使用唯一性索引等值查询匹配到记录时，退化为记录锁，当查找不到数据时，退化为Gap Lock。**</font>
 
 
 ![mysql-Next-Key Lock示例1](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-%E9%97%B4%E9%9A%99%E9%94%81%E7%A4%BA%E6%84%8F%E5%9B%BE.png)
