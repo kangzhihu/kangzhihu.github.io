@@ -23,6 +23,14 @@ tags:
 &emsp;&emsp;图中有两个topic，topic 0有两个partition，topic 1有一个partition，三副本备份。可以看到consumer gourp 1中的consumer 2没有分到partition处理。    
 &emsp;&emsp;kafka的数据，实际上是以文件的形式存储在文件系统的。topic下有Partition，同一Topic下的不同分区包含的消息是不同的。partition下有segment，segment是实际的一个个文件，topic和partition都是抽象概念。每个segment文件大小相等，文件名以这个segment中最小的offset命名，文件扩展名是.log；segment对应的索引的文件名字一样，扩展名是.index。   
 
+### controller
+&emsp;&emsp;kafka集群会选出一个broker作为controller，这个选举是借助zookeeper来完成的，zookeeper本质是通过让它们抢占一个临时节点(/kafka/controller)，谁抢到谁就是controller。
+&emsp;&emsp;在早期的2.0版本中，controller选举依赖zk，但是3.0中开始弱化zk作用，可以通过配置直接指定。
+>对于创建 Topic 这种会更改集群元数据的请求，在 KRaft模式下都会交给 Kafka Controller集群的 Leader 节点处理。元数据保存下来后必然要传播到整个集群，使其正常生效，这个传播的过程就是元数据的主从同步。
+> [阅读参考-Kafka 服务端元数据的主从同步](https://blog.csdn.net/weixin_45505313/article/details/123946462)
+
+>kafka中的Topic元数据信息存储在ZK的持久节点中，这些节点记录了ZK的元数据描述了Topic的分区的信息，记录了具体的Leader，副本数等信息。
+
 ## Topic&Partition分区
 
 ### 发送端  

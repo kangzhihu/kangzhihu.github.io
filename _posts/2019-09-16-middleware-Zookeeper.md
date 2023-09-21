@@ -17,15 +17,7 @@ tags:
 3、ZooKeeper的客户端和服务器通信采用长连接方式,每个客户端和服务器通过心跳来保持连接,这个连接状态成为session。  
 4、znode可以被监控,包括这个目录节点中存储的数据被修改,子节点目录的变化等,**一旦变化可以通知设置监控的客户端**,这个是ZooKeeper的核心特性。
 
->为什么controller和broker都是使用临时节点来表示？ 这是因为，当节点出现宕机时，需要允许集群做出响应，通过临时节点的回调进行对应集群协调处理。
-
-### controller
-&emsp;&emsp;kafka集群会选出一个broker作为controller，这个选举是借助zookeeper来完成的，zookeeper本质是通过让它们抢占一个临时节点(/kafka/controller)，谁抢到谁就是controller。
-&emsp;&emsp;在早期的2.0版本中，controller选举依赖zk，但是3.0中开始弱化zk作用，可以通过配置直接指定。  
->对于创建 Topic 这种会更改集群元数据的请求，在 KRaft模式下都会交给 Kafka Controller集群的 Leader 节点处理。元数据保存下来后必然要传播到整个集群，使其正常生效，这个传播的过程就是元数据的主从同步。
-> [阅读参考-Kafka 服务端元数据的主从同步](https://blog.csdn.net/weixin_45505313/article/details/123946462)
-
->kafka中的Topic元数据信息存储在ZK的持久节点中，这些节点记录了ZK的元数据描述了Topic的分区的信息，记录了具体的Leader，副本数等信息。  
+>为什么在kafka中controller和broker都是使用临时节点来表示？ 这是因为，当节点出现宕机时，需要允许集群做出响应，通过临时节点的回调进行对应集群协调处理。
 
 ### 使用场景
 &emsp;&emsp;Zookeeper是一个高效的分布式协调服务，可以提供配置信息管理、命名、分布式同步、分布式锁、集群管理、数据库切换等服务。它<font color="red">不适合</font>用来存储大量信息，可以用来存储一些配置、发布与订阅等少量信息。  
