@@ -63,12 +63,12 @@ tags:
 
 ####  临界锁 next-key
 &emsp;&emsp;后面MVCC分析可知，可重复读和提交读是矛盾的。在同一个事务里，如果保证了可重复读，就会看不到其他事务的提交读取的总是快照旧数据，违背了提交读；如果保证了提交读，就会导致前后两次读到的结果不一致，违背了可重复读。    
-&emsp;&emsp;为<font color="blue">左开右闭</font>，左间隙与行锁组合起来用就叫做Next-Key Lock，间隙锁主要创建在联合索引或者主键索引中，其是将查找到的主键前后节点之间的插入关闭。  
-
+&emsp;&emsp;为<font color="blue">左开右闭</font>，**左间隙**与行锁组合起来用就叫做Next-Key Lock，间隙锁主要创建在联合索引或者主键索引中，其是将查找到的主键**前后**节点之间的插入关闭。  
+> 当我们更新一条记录，比如 SELECT * FROM users WHERE age = 30 FOR UPDATE;，InnoDB 不仅会在范围 (21, 30] 上加 Next-Key 锁，还会在这条该记录索引增长方向的范围 (30, 40] 加间隙锁，所以插入 (21, 40] 范围内的记录都会被锁定。
 ####  GAP间隙锁
 &emsp;&emsp;范围查询或者等值查询时，若记录不存在则退化为GAP锁；
 
-> 重要说明：<font color="red">**mysql默认的行锁是next-key锁。当使用唯一性索引等值查询匹配到记录时，退化为记录锁，当查找不到数据时，退化为Gap Lock。**</font>
+> 重要说明：**<font color="red">mysql默认的行锁是next-key锁。当使用唯一性索引等值查询匹配到记录时，退化为记录锁，当查找不到数据时，退化为Gap Lock。</font>**
 
 
 ![mysql-Next-Key Lock示例1](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-%E9%97%B4%E9%9A%99%E9%94%81%E7%A4%BA%E6%84%8F%E5%9B%BE.png)
