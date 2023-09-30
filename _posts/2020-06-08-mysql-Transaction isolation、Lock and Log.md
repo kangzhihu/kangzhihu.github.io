@@ -136,5 +136,6 @@ insert into news value(14,3);#(阻塞)
 #### 锁的兼容性表    
 ![锁兼容矩阵](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-%E9%94%81%E5%85%BC%E5%AE%B9%E8%A1%A8.jpg)  
 &emsp;&emsp;可以看出插入意向锁(GAP)和gap lock和 Next-key lock是冲突的，需要阻塞等待。注意：RC比RR少了GAP锁和Next-key lock。  
+&emsp;&emsp;只要两种锁中，有Record都同时被扫描到锁定，那一定冲突不兼容，比如Next-key之间，没锁定到相同的记录，则兼容。    
 
 [一个死锁参考](https://my.oschina.net/hebaodan/blog/1835966)
