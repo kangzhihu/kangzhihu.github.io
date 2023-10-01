@@ -74,4 +74,29 @@ Netty 启动以及链接建立过程
 
 &emsp;&emsp;前两种返回值不为0，可以跳出循环，但是后两种当超过一定次数(512次)，则处于一直轮询没处理任何事件，此时可能底层的操作系统的Selector实现遇到了一些问题，无法正常地检测到通道（Channel）的事件状态变化，导致Selector一直在等待新事件而不执行任何实际的工作。这种情况可能出现在高负载、资源泄漏、不正常的通道注册/取消注册等情况下。
 所以通过新建一个Selector也即相当于重置Selector 的内部状态来帮助解决可能出现的空轮询等问题。
+```java
+long currentTimeNanos = System.nanoTime();
+for (;;) {
+    // 1.定时任务截止事时间快到了，中断本次轮询
+    //...
+    // 2.轮询过程中发现有任务加入，中断本次轮询
+    //...
+    // 3.阻塞式select操作
+    selector.select(timeoutMillis);
+    // 4.解决jdk的nio bug
+    long time = System.nanoTime();
+    if (time - TimeUnit.MILLISECONDS.toNanos(timeoutMillis) >= currentTimeNanos) {
+        selectCnt = 1;
+    } else if (SELECTOR_AUTO_REBUILD_THRESHOLD > 0 &&
+            selectCnt >= SELECTOR_AUTO_REBUILD_THRESHOLD) {
 
+        rebuildSelector();
+        selector = this.selector;
+        selector.selectNow();
+        selectCnt = 1;
+        break;
+    }
+    currentTimeNanos = time;
+    //...
+ }
+```
