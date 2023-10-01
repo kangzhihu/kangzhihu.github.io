@@ -150,6 +150,7 @@ int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
 3. cache更新是很轻量级的，仅仅是更新一些内存中的数据结构，不会有太大的成本。因此我们还是可以安全地认为每台broker上都有相同的cache信息。  
 
 只要集群中有broker或分区数据发生了变更就需要更新这些cache,比如当有新的borker加入时，其它broker监听Zookeeper的controller就会立即感知这台新broker的加入去更新缓存。  
+&emsp;&emsp;在高版本中，不依赖zk，而是使用 Raft 协议来实现元数据的管理。RaftController 是 Kafka 集群中的关键组件，它会选举一个Controller Leader使用 Raft 一致性协议来维护集群的元数据，包括主题、分区、副本分配、Leader 选举等，该 Leader 负责处理元数据的变更请求，并将这些变更同步给其他 Broker。。
 ###  消息存储原理
 #### LogSegment
 &emsp;&emsp;我们知道Topic是以Partition为基本的存储单元存放在Broker中，其实在实际的物理存储中，一个Partition log日志文件被划分为多个LogSegment。LogSegment也为一个逻辑单元，其由四部分组成：  
