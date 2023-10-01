@@ -24,13 +24,14 @@ tags:
 &emsp;&emsp;kafka的数据，实际上是以文件的形式存储在文件系统的。topic下有Partition，同一Topic下的不同分区包含的消息是不同的。partition下有segment，segment是实际的一个个文件，topic和partition都是抽象概念。每个segment文件大小相等，文件名以这个segment中最小的offset命名，文件扩展名是.log；segment对应的索引的文件名字一样，扩展名是.index。   
 
 ### controller
-&emsp;&emsp;kafka集群会选出一个broker作为controller，这个选举是借助zookeeper来完成的，zookeeper本质是通过让它们抢占一个临时节点(/kafka/controller)，谁抢到谁就是controller。  
-&emsp;&emsp;在早期的2.0版本中，controller选举依赖zk，但是3.0中开始弱化zk作用，可以通过配置直接指定。
+&emsp;&emsp;kafka集群会选出一个broker作为controller，早期版本这个选举是借助zookeeper来完成的，zookeeper本质是通过让它们抢占一个临时节点(/kafka/controller)，谁抢到谁就是controller。  
+&emsp;&emsp;在早期的2.0版本中，controller选举依赖zk，但是3.0中开始弱化zk作用，可以通过配置直接指定或者RaftController来实现。
 >对于创建 Topic 这种会更改集群元数据的请求，在 KRaft模式下都会交给 Kafka Controller集群的 Leader 节点处理。元数据保存下来后必然要传播到整个集群，使其正常生效，这个传播的过程就是元数据的主从同步。
 > [阅读参考-Kafka 服务端元数据的主从同步](https://blog.csdn.net/weixin_45505313/article/details/123946462)
 
 >kafka中的Topic元数据信息存储在ZK的持久节点中，这些节点记录了ZK的元数据描述了Topic的分区的信息，记录了具体的Leader，副本数等信息。
 
+> 注意：<font color="green">controller是在Broker端的，Coordinator也是在Broker端的，客户端只会与Broker链接而不会与controller直接连接。</font>
 ## Topic&Partition分区
 
 ### 发送端  
@@ -90,8 +91,8 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 - 当分区数量发生变化时，该分区下面的所有Group将触发reBlance操作。  
 
 ### reBalance的执行以及管理 consumer 的 group
-#### coordinator
-&emsp;&emsp;coordinator充当了执行和管理的角色。   
+#### Group Coordinator
+&emsp;&emsp;Group Coordinator充当了执行和管理的角色，其与Broker维持了心跳和定期检测最新元数据，当Broker/消费组中发生变更时能感知到，**注意coordinator是消费者组的**。   
 &emsp;&emsp;如何产生：消费者向kafka集群中任意一个broker发送一个GroupCoordinatorRequest 请求，服务端会返回一个负载最小的broker节点的id ，并将该broker设置为coordinator。  
 
 #### 消费端Group的产生
@@ -99,8 +100,6 @@ Kafka保证同一consumer group中只有一个consumer会消费某条消息,当�
 
 #### 集群分区消费方案确定
 &emsp;&emsp;所有的消费者均向coordinator发送SyncGroupRequest请求(实际中只有leader的发送携带了分区消费方案，其它都是酱油)。coordinator 接受到请求后会把结果设置到 SyncGroupResponse 中并返回给每一个消费者 --由此可以看出，其实消费方案是在客户端制定的，这样权利下放给客户端可以更加的灵活。    
-
-
 
 ### Offset管理
 
@@ -150,7 +149,9 @@ int value = Math.abs("groupid".hashCode())%groupMetadataTopicPartitionCount ;
 3. cache更新是很轻量级的，仅仅是更新一些内存中的数据结构，不会有太大的成本。因此我们还是可以安全地认为每台broker上都有相同的cache信息。  
 
 只要集群中有broker或分区数据发生了变更就需要更新这些cache,比如当有新的borker加入时，其它broker监听Zookeeper的controller就会立即感知这台新broker的加入去更新缓存。  
-&emsp;&emsp;在高版本中，不依赖zk，而是使用 Raft 协议来实现元数据的管理。RaftController 是 Kafka 集群中的关键组件，它会选举一个Controller Leader使用 Raft 一致性协议来维护集群的元数据，包括主题、分区、副本分配、Leader 选举等，该 Leader 负责处理元数据的变更请求，并将这些变更同步给其他 Broker。。
+&emsp;&emsp;在高版本中，不依赖zk，而是使用 Raft 协议来实现元数据的管理。RaftController 是 Kafka 集群中的关键组件，它会选举一个Controller Leader使用 Raft 一致性协议来维护集群的元数据，包括主题、分区、副本分配、Leader 选举等，该 Leader 负责处理元数据的变更请求，并将这些变更同步给其他 Broker。  
+&emsp;&emsp;客户端在初始建立连接时，会从Broker获取到元数据信息，并且定时更新&被Broker通知变更。  
+
 ###  消息存储原理
 #### LogSegment
 &emsp;&emsp;我们知道Topic是以Partition为基本的存储单元存放在Broker中，其实在实际的物理存储中，一个Partition log日志文件被划分为多个LogSegment。LogSegment也为一个逻辑单元，其由四部分组成：  
@@ -172,6 +173,10 @@ Question：
 #### Partition中如何通过offset查找具体的message
 &emsp;&emsp;先通过二分查找算法在.index文件中快速定位到具体的磁盘偏移量position(YYY)，也是用二分查找找到offset小于或者等于指定offset的索引条目中最大的那个offset。再通过查找到的position到.log文件中在value=“partition(YYY)”查找对应的消息偏移量：msg-offset值，该值即为具体的消息内容。为啥顺序查找：可以简单理解partition为磁盘页(ByteBuffer)地址，该地址上存储了多个offset对应的消息，所以先定位到具体的页地址，然后在物理页中顺序查找。    
 
+#### 数据丢失
+&emsp;&emsp;一般消费端丢失都是使用默认的自动应答造成的，**自动提交了 offset**但是在消费时挂了。  
+&emsp;&emsp;发送端可能是没有开启副本同步，leader挂了没有写入全部的副本中。  
+
 #### 日志压缩策略
 &emsp;&emsp;开启 kafka 的日志压缩功能，服务端会在后台启动启动Cleaner 线程池，定期将相同的 key 进行合并，只保留最新的 value 值。比如：对于log文件中存在offset=1和offset=5的两个相同key的message，在消费者只关心 key 对应的最新的 value情况下，offset=1对应的消息内容将被清理掉。    
 
@@ -189,3 +194,8 @@ Question：
 get /brokers/topics/testTopic/partitions/1/state    
 ➢ {"controller_epoch":12,"leader":0,"version":1,"leader_epoch":0,"isr":[0,1]}    
 可以看出，第0个节点为Leader节点，总共存在0和1两个副本。leader 负责维护和跟踪 ISR(in-Sync replicas ， 副本同步队列)中所有 follower 滞后的状态。       
+
+
+#### 消费线程
+&emsp;&emsp;Kafka 和 RocketMQ 都支持多线程消费，但线程池通常需要用户自行管理和配置，而不是由它们封装好的。  
+&emsp;&emsp;kafka 创建多线程自己去拉取消息，而RocketMq 在接口MessageListenerConcurrently支持多线程消费，在其中自定义线程池去处理拉取到的消息。
