@@ -49,6 +49,38 @@ Reactor 多线程模型的特点：
 > 主线程池主要负责监听和分发连接请求，而从 Reactor 线程池则负责具体的连接处理。
 
 ### Netty 
+&emsp;&emsp;Netty 是基于 Reactor 模式设计和实现的网络编程框架。在 Netty 中，事件循环（EventLoop）充当了 Reactor 角色，负责监听并处理各种 I/O 事件。
+![IO-netty模型](https://raw.githubusercontent.com/kangzhihu/images/master/IO-netty模型.jpeg)
+Channel 为 Netty 网络操作(读写等操作)抽象类，EventLoop 负责处理注册到其上的Channel 处理 I/O 操作，两者配合参与 I/O 操作。  
+
+#### Channel
+&emsp;&emsp;Channel 接口是 Netty 对网络操作抽象类，它除了包括基本的 I/O 操作，如 bind()、connect()、read()、write() 等。 比较常用的Channel接口实现类是NioServerSocketChannel（服务端）和NioSocketChannel（客户端），这两个 Channel 可以和 BIO 编程模型中的ServerSocket以及Socket两个概念对应上。
+#### EventLoop
+&emsp;&emsp;EventLoop 定义了 Netty 的核心抽象，用于处理连接的生命周期中所发生的事件。负责监听网络事件并调用事件处理器进行相关 I/O 操作的处理。   
+&emsp;&emsp;EventLoopGroup 包含多个 EventLoop（每一个 EventLoop 通常内部包含一个线程）,EventLoop 处理的 I/O 事件都将在它专有的 Thread 上被处理，即 Thread 和 EventLoop 属于 1 : 1 的关系，从而保证线程安全。  
+
+客户端连接处理流程：  
+
+1. 当客户端通过 connect 方法连接服务端时，bossGroup 处理客户端连接请求。
+2. 当客户端处理完成后，会将这个连接提交给 workerGroup 来处理，然后 workerGroup 负责处理其 IO 相关操作。
+
+
+#### ChannelHandler 和 ChannelPipeline
+ChannelHandler 是消息的具体处理器。他负责处理读写操作、客户端连接等事情。  
+&emsp;&emsp;ChannelPipeline 为 ChannelHandler 的链，提供了一个容器并定义了用于沿着链传播入站和出站事件流的 API 。当 Channel 被创建时，它会被自动地分配到它专属的 ChannelPipeline。
+```java
+  b.group(eventLoopGroup)
+    .handler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        protected void initChannel(SocketChannel ch) {
+            ch.pipeline().addLast(new NettyKryoDecoder(kryoSerializer, RpcResponse.class));
+            ch.pipeline().addLast(new NettyKryoEncoder(kryoSerializer, RpcRequest.class));
+            ch.pipeline().addLast(new KryoClientHandler());
+        }
+    });
+```
+
+
 
 #### Netty 为什么性能好？
 1. 纯异步：Reactor 线程模型
