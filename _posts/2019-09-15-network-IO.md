@@ -65,6 +65,7 @@ tags:
 ![直接I/O的write图](https://raw.githubusercontent.com/kangzhihu/images/master/%E7%9B%B4%E6%8E%A5IO%E7%9A%84write.png)  
 &emsp;&emsp;write过程中会有很多次拷贝，直到数据全部写到磁盘。好了，准备知识概略复习了一下，开始探讨IO模式。  
 
+>NIO 的缓冲将数据缓存起来后，可以前后移动的去控制读取，而传统的IO 面向流意味着每次从流中读一个或多个字节，直至读取所有字节。需要注意的是，缓冲区大小要考虑Buffer大小，若文件过大，需要分段传输。Pooling Buffer可以做到缓冲区的复用，降低创建和销毁的资源消耗。  
 
 ## 2. I/O模式
 &emsp;&emsp;对于一次IO访问（这回以read举例），数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的缓冲区，最后交给进程。所以说，**<font color="red">当一个read操作发生时，它会经历两个阶段：</font>**     
@@ -94,20 +95,25 @@ read为例：
 &emsp;&emsp;可以通过设置socket使其变为non-blocking。当对一个non-blocking socket执行读操作时，流程是这个样子：  
 ![非阻塞socket读](https://raw.githubusercontent.com/kangzhihu/images/master/%E9%9D%9E%E9%98%BB%E5%A1%9EIO%E6%A8%A1%E5%9E%8B.jpg)  
 （1）当用户进程发出read操作时，如果kernel中的数据还没有准备好；  
-（2）那么它并不会block用户进程，而是立刻返回一个error，从用户进程角度讲 ，它发起一个read操作后，并不需要等待，而是马上就得到了一个结果；  
+（2）那么它并不会block用户进程，而是立刻返回一个error，从用户进程角度讲 ，它发起一个read操作后，并不需要等待，而是马上就得到了一个结果(可以去做其他事情了)；  
 （3）用户进程判断结果是一个error时，它就知道数据还没有准备好，于是它可以再次发送read操作。一旦kernel中的数据准备好了，并且又再次收到了用户进程的system call；  
 （4）那么它马上就将数据拷贝到了用户内存，然后返回。  
 
 &emsp;&emsp;所以，<font color="red">nonblocking IO的特点是用户进程在内核准备数据的阶段需要<font color="deeppink">不断的主动询问</font>数据好了没有。</font>
 
-### 2.3 asynchronous I/O（异步 I/O）
+### 2.3 信号驱动 IO 模
+&emsp;&emsp;在信号驱动 IO 模型中，当用户线程发起一个 IO 请求操作，会给对应的 socket 注册一个信号函数，然后用户线程会继续执行，当内核数据就绪时会发送一个信号给用户线程，用户线程接收到信号之后，便在信号函数中调用 IO 读写操作来进行实际的 IO 请求操作。
+
+### 2.4 asynchronous I/O（异步 I/O）
  &emsp;&emsp;真正的异步I/O很牛逼，流程大概如下：  
 ![异步 I/O图](https://raw.githubusercontent.com/kangzhihu/images/master/%E5%BC%82%E6%AD%A5IO.png)  
 （1）用户进程发起read操作之后，立刻就可以开始去做其它的事。  
 （2）而另一方面，从kernel的角度，当它收到一个asynchronous read之后，首先它会立刻返回，所以不会对用户进程产生任何block。  
 （3）然后，<font color = "red">kernel会等待数据准备完成，然后将数据拷贝到用户内存，当这一切都完成之后，kernel会给用户进程发送一个signal，告诉它read操作完成了。</font>
 
-### 2.4 I/O多路复用
+>在信号驱动模型中，当用户线程接收到信号表示数据已经就绪，然后需要用户线程调用 IO 函数进行实际的读写操作；而在异步 IO 模型中，收到信号表示 IO 操作已经完成，不需要再在用户线程中调用 IO 函数进行实际的读写操作。
+
+### 2.5 I/O多路复用
 
 > &emsp;&emsp;多路I/O复用模型是利用 select、poll、epoll 可以同时监察多个流的 I/O 事件的能力，在空闲的时候，会把当前线程阻塞掉，当有一个或多个流有 I/O 事件时，就从阻塞态中唤醒，于是程序就会轮询一遍所有的流（epoll 是只轮询那些真正发出了事件的流），并且只依次顺序的处理就绪的流，这种做法就避免了大量的无用操作。  
 > &emsp;&emsp;这里“多路”指的是多个网络连接，“复用”指的是复用同一个线程。采用多路 I/O 复用技术可以让单个线程高效的处理多个连接请求（尽量减少网络 IO 的时间消耗）
@@ -124,9 +130,9 @@ read为例：
 &emsp;&emsp;<font color="red">select/epoll的优势并不是对于单个连接能处理得更快，而是在于能处理更多的连接。</font>    
 &emsp;&emsp;在IO multiplexing Model中，<font color="red">可以理解在内核中存在一个注册表，当用户进程调用select时，会向该表注册一个socket，内核中有单独的线程去不停的读取该表注册的socket的状态。对于每一个socket，一般都设置成为non-blocking，但是，如上图所示，**整个用户的process处理流程其实是一直被block的。只不过process是被select这个函数block，而不是被socket IO给block**。</font>   
 
+>多路复用 IO 模型是通过轮询的方式来检测是否有事件到达，并且对到达的事件逐一进行响应。因此对于多路复用 IO 模型来说，一旦事件响应体很大，那么就会导致后续的事件迟迟得不到处理，并且会影响新的事件轮询。
 
-
-### 2.5 IO小结
+### 2.6 IO小结
 （1）blocking和non-blocking的区别  
  &emsp;&emsp;**是从用户线程在没有可处理数据的情况下能不能立刻返回来看的**。调用blocking IO会一直block住对应的进程，直到操作完成，而non-blocking IO在kernel还准备数据的情况下会立刻返回。    
 （2）同步IO和异步IO  
@@ -136,6 +142,12 @@ read为例：
 （3）NIO和AIO的区别   
 - 在non-blocking IO中，虽然进程大部分时间都不会被block，但是它仍然要求进程去<font color="red">主动的</font>check，并且当数据准备完成以后，也需要进程<font color="red">主动的再次调用recvfrom</font>来将数据拷贝到用户内存。
 - 而asynchronous IO则完全不同。它就像是用户进程将整个IO操作交给了他人（kernel）完成，然后他人做完后发信号通知。在此期间，用户进程<font color="red">不需要</font>去检查IO操作的状态，也不需要主动的去拷贝数据。  
+
+（4）NIO为啥比IO强？  
+&emsp;&emsp;<font color="red">因为在多路复用 IO 模型中，只需要使用一个线程(这个线程还是内核中的)就可以管理多个socket，系统不需要建立新的进程或者线程(去参与系统内核通讯)，也不必维护这些线程和进程，并且只有在真正有socket 读写事件进行时，才会使用 IO 资源，所以它大大减少了资源占用。</font>
+
+（5）Stream和Channel有什么不同  
+&emsp;&emsp;Stream是单向的，而Channel是双向的，可以读写
 
 ----
 
