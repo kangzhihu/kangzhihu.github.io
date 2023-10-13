@@ -32,6 +32,28 @@ tags:
 &emsp;&emsp;Controller会监听每个 Broker 的连接通道，当Broker发生变动后，就会判断该 Broker 是否为 Master，如果是，则会触发选主的流程。选举 Master 的⽅式⽐较简单，我们只需要在该组 Broker 所对应的 SyncStateSet 列表中，挑选⼀个出来成为新的 Master 即可，并通过 DLedger 共识后应⽤到内存元数据，最后将结果通知对应的Broker副本组。  
 &emsp;&emsp;DLedger 部署在每个Broker节点中，通过Raft协议去投票产生新的Master节点。[阅读参考](https://www.lmlphp.com/user/57922/article/item/2450770/)  
 
+### Rebalance
+触发Rebalance的根本因素无非是两个：[参阅](https://blog.csdn.net/meser88/article/details/121340241)  
+- 订阅Topic的队列数量变化;  
+- 消费者组信息变化。 
+
+| 变化 | 典型场景                     | 
+| -------- | --------------------------- | 
+| 队列信息变化 | - broker宕机等变更<br> - 队列扩容/缩容<br> - broker升级等运维操作| 
+| 消费者组信息变化 |- 日常发布过程中的停止与启动<br> - 消费者异常宕机<br> - 网络异常导致消费者与Broker断开连接<br> - 主动进行消费者数量扩容/缩容<br> - Topic订阅信息发生变化   | 
+&emsp;&emsp;队列信息和消费者组信息这些都**维护在Broker中**，当发生变更时，以某种通知机制告诉消费者组下所有实例，需要进行Rebalance，Borker充当着协调者的角色。Rebalance也是以消费组纬度进行的。  
+
+#### 生产方动作
+&emsp;&emsp;Producer会定期检测RocketMQ集群的状态，包括Broker的变化和消费者组的变化。当发现消费者组发生变化或者Broker发生变化时，Producer会触发rebalance。
+
+#### 消费方动作
+&emsp;&emsp;Broker是通知每个消费者各自Rebalance，即每个消费者自己给自己重新分配队列，而不是Broker将分配好的结果告知Consumer。
+
+#### 与kafka的异同
+&emsp;&emsp;RocketMQ与Kafka Rebalance机制类似，二者Rebalance分配都是在客户端进行，不同的是  
+- Kafka：会在消费者组的多个消费者实例中，选出一个作为Group Leader，由这个Group Leader来进行分区分配，分配结果**通过Cordinator(特殊角色的broker)同步给其他消费者**。相当于Kafka的分区分配只有一个大脑，就是Group Leader。
+- RocketMQ：每个消费者，自己负责给自己分配队列，相当于每个消费者都是一个大脑。
+
 ### 消息存储文件设计
 &emsp;&emsp;消息存储主要体现在三个文件中：CommitLog（真正存储消息体的地方）、ConsumeQueue（某个Topic下某个Queue的消息索引信息）、IndexFile（通过key或时间区间来查询消息的索引文件）。  
 全图：  
