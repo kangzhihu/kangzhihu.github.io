@@ -37,8 +37,8 @@ kafka：使用异步刷盘方式，异步复制/同步复制。
 1、kafka单机若超过了64个partition/队列，CPU load会发生明显飙高，partition越多，CPU load越高，发消息的响应时间变长。   
 2、RocketMQ单机支持最高5万个队列，CPU load不会发生明显变化。  
  - 还没理解到。。
-队列多有什么好处呢？
-1、单机可以创建更多个topic, 因为每个topic都是有一组队列组成。  
+队列多有什么好处呢？  
+1、单机可以创建更多个topic, 因为每个topic都是有一组队列组成。    
 2、消费者的集群规模和队列数成正比，队列越多，消费类集群可以越大。  
 
 一句话概括：RocketMQ支持的队列数远高于kafka支持的partition数，这样RocketMQ可以支持更多的consumer集群。  
