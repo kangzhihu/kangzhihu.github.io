@@ -53,6 +53,12 @@ kafka：使用异步刷盘方式，异步复制/同步复制。
 
 一句话概括：kafka不保证消息有序，RocketMQ可保证严格的消息顺序，在broker端，前面的消息未消费，后面的消息也不会被消费掉，即使单台Broker宕机，仅会造成消息发送失败，但不会消息乱序。  
 
+#### Rebalance异同
+&emsp;&emsp;RocketMQ与Kafka Rebalance机制类似，二者Rebalance分配都是在客户端进行，不同的是
+- Kafka：会在消费者组的多个消费者实例中，选出一个作为Group Leader，由这个Group Leader来进行分区分配，分配结果**通过Cordinator(特殊角色的broker)同步给其他消费者**。相当于Kafka的分区分配只有一个大脑，就是Group Leader。
+- RocketMQ：每个消费者，自己负责给自己分配队列，相当于每个消费者都是一个大脑。
+
+
 ##### 定时消息
 1、kafka不支持定时消息  
 2、开源版本的RocketMQ仅支持定时级别，定时级别用户可定制  
