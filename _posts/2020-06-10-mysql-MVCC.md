@@ -10,6 +10,7 @@ tags:
   - 数据库
   - 事务
   - MVCC
+  - mysql
 ---
 ## 写在前面
 Read View 、MVCC和 Next-Key Locks 配合的方式如下：  

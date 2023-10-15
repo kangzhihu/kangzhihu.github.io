@@ -9,6 +9,7 @@ catalog: true
 tags:
   - 数据库
   - 索引
+  - mysql
 ---
 [强烈推荐阅读-MySQL-INNODB形成原理](https://mp.weixin.qq.com/s/dTwvk901VMnX_wAX8VNxcw)
 [推荐阅读-浅谈AVL树,红黑树,B树,B+树原理及应用](https://blog.csdn.net/whoamiyang/article/details/51926985)  
@@ -189,3 +190,6 @@ select * from member a where exists(select * from member b where b.id=a.id );
 select * from member a inner join member b on a.id=b.id; 
 ```
 &emsp;&emsp;为啥选择inner join？使用 inner join时，优化器能自动选择哪种a链接b还是b链接a，这样从整体性能上比使用left join或者right join 要高。
+
+### InnoDB 记录行与数据页
+[参考阅读-InnoDB 记录行与数据页](https://zhuanlan.zhihu.com/p/639042049)

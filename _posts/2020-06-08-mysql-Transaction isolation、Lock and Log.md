@@ -9,6 +9,7 @@ catalog: true
 tags:
   - 数据库
   - 事务
+  - mysql
 ---
 触发当前读：
 - select...lock in share mode , select...for update  
