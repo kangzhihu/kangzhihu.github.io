@@ -11,7 +11,36 @@ tags:
   - MQ
   - RocketMQ
 ---
-### 两种消费模式
+### 集群管理总结
+&emsp;&emsp;1、主独立NameServer(元数据管理，相互独立，与每个Broker通讯)；    
+&emsp;&emsp;2、RebalanceService，位于每个消费端，之间也不存在通讯，从NameServer获取Topic路由和消费者组成员元数据动态计算当前实例应消费的队列。  
+&emsp;&emsp;3、考虑到RebalanceService和NameServer均独立，所以允许心跳、锁检测和Rebalance再平衡过程快速恢复达到最终一致性  
+&emsp;&emsp;6、那么为了数据不一致导致的消费冲突问题，Broker端对消息队列的消费权只允许单个消费者持有锁（通过消息队列锁定机制），持有锁后进行消费。  
+
+> - RocketMq简化了管理，除了Broker额外管理消费者的offset信息以及提供集群元数据信息的查询，消费组的管理基本上不参与；  
+> - RocketMQ通过灵活的复制和事务设计，牺牲部分强一致性（AP方案），换取业务流程中的高可靠性和连续性，避免消息丢失和业务中断；
+> - RocketMQ需要管理事务，流程追踪、MessageQueue index管理等增加集群的高可用性和连续性，所以需要识别数据，没办法使用零拷贝，所以相比较kafka来说性能低些；
+
+#### <font color = "red">为什么 Redis 选择无中心而 Kafka、RocketMQ 没有？</font>
+> 
+> 1、偏向AP，Redis Cluster 的目标是高性能、高可用的键值存储，元数据管理相对简单，节点状态变化和槽位映射更新的管理复杂度较低，适合利用 Gossip 去中心化实现。  
+> 2、偏向CP，Kafka 和 RocketMQ 除了存储消息外，还承担复杂的分区管理、消费者负载均衡、事务管理及强一致性保证，需要有一个集中协调的组件保证全局状态的准确和一致。
+
+| &zwnj;**维度**&zwnj; | &zwnj;**Redis Cluster**&zwnj; | &zwnj;**Kafka**&zwnj; | &zwnj;**RocketMQ**&zwnj; |
+| --- | --- | --- | --- |
+| &zwnj;**元数据管理**&zwnj; | 无中心化，所有节点有完整集群元信息副本 | 中心化，由单一Controller节点维护（选举产生） | 中心化，NameServer和Broker Controller负责 |
+| &zwnj;**元数据内容**&zwnj; | 节点列表、节点状态、槽(slot)分配、拓扑信息 | Topic元数据，Partition分配，Leader & ISR列表 | Topic路由信息，Broker状态，消息队列元数据 |
+| &zwnj;**集群协调方式**&zwnj; | Gossip协议交换状态，分布式投票选举故障转移 | Controller节点负责，Zookeeper协调选举管理 | NameServer + Broker Controller协调 |
+| &zwnj;**故障检测**&zwnj; | 节点相互gossip检测，主观+客观下线判定 | Zookeeper监控Broker和Controller状态 | 心跳机制+控制节点监控 |
+| &zwnj;**故障恢复与选举**&zwnj; | 从节点发起选举，通过分布式投票完成故障转移 | Controller节点通过Zookeeper发起Partition Leader选举 | Broker Controller进行Broker Leader选举 |
+| &zwnj;**消费者协调**&zwnj; | 无中心化，客户端独立维护元数据并通过MOVED错误重定向请求 | 中心化，有Group Coordinator管理消费者组成员和Rebalance | 有消费组协调机制，依赖NameServer/Broker Controller |
+| &zwnj;**扩展性**&zwnj; | 高，无中央协调瓶颈，节点数量增大影响较小 | 中等，Controller及Zookeeper可能成为瓶颈 | 中等，中心节点会有压力 |
+| &zwnj;**容错和可用性**&zwnj; | 高，去中心化避免单点故障 | 中等，依赖Controller和Zookeeper的高可用部署 | 中等，依赖中心组件高可用 |
+| &zwnj;**设计侧重点**&zwnj; | 轻量、高性能、简单容错 | 强一致性、可靠的消息存储与消费，复杂协调 | 异步消息传递，高吞吐与消费协调 |
+| &zwnj;**设计难度**&zwnj; | 相对简单，利用一致性哈希和Gossip | 复杂，需要实现复杂的分布式协调算法 | 复杂，结合Broker与NameServer多组件协调处理 |
+
+
+### 消息的两种消费模式
 - Pull模式：由消费者客户端主动向消息中间件（MQ消息服务器代理）拉取消息；(**消费端消费慢问题**)
 - Push模式：由消息中间件（MQ消息服务器代理）主动地将消息推送给消费者；(**消息延迟与忙等待问题**)
 

@@ -22,6 +22,14 @@ tags:
 ![kafka结构图示意图](https://raw.githubusercontent.com/kangzhihu/images/master/kafka%E7%BB%93%E6%9E%84%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg)  
 &emsp;&emsp;图中有两个topic，topic 0有两个partition，topic 1有一个partition，三副本备份。可以看到consumer gourp 1中的consumer 2没有分到partition处理。    
 &emsp;&emsp;kafka的数据，实际上是以文件的形式存储在文件系统的。topic下有Partition，同一Topic下的不同分区包含的消息是不同的。partition下有segment，segment是实际的一个个文件，topic和partition都是抽象概念。每个segment文件大小相等，文件名以这个segment中最小的offset命名，文件扩展名是.log；segment对应的索引的文件名字一样，扩展名是.index。   
+> Kafka ISR机制提供更强写入一致性(选择CP)，需要ISR全部副本确认，但在极端或网络抖动情况下，如果副本数量不足，将拒绝服务，所以可能影响写入的持续可用性
+
+| **消息队列特性** | **Kafka（重视强一致性）** | **RocketMQ（重视高可靠性和业务连续性）** |
+| --- | --- | --- |
+| **写入确认机制** | **需要ISR全部副本确认**，确保数据写入强一致性 | **支持同步和异步复制**，灵活权衡写入延迟与数据可靠性 |
+| **故障恢复能力** | ISR副本不足时可能拒绝写入，**影响系统短暂可用性** | 拥有重试和轨迹机制，**保证消息不丢失**，支持事务确保业务完整性 |
+| **适用业务场景** | 适合**大数据流或实时分析场景**，对一致性和实时性要求高 | 适用于**事务性业务或金融场景**，对消息可靠性和业务流程完整性要求极高 |
+| **容错策略** | 强调强一致性，可能牺牲部分延迟和短暂不可写入性 | **注重业务不中断和消息高可靠投递**，灵活应对各种故障情况 | **Kafka（** |重视高可靠性和业务连续性）确认** **ISR副本**， **支持同步和异步复制**， ISR不足可能写入**影响系统短暂可用性** |**保证消息不丢失**，**流实时场景对一致性和实时性要求高 |对消息可靠性和业务流程完整性要求极高 |
 
 ### controller
 &emsp;&emsp;kafka集群会选出一个broker作为controller，早期版本这个选举是借助zookeeper来完成的，zookeeper本质是通过让它们抢占一个临时节点(/kafka/controller)，谁抢到谁就是controller。  
@@ -32,6 +40,7 @@ tags:
 >kafka中的Topic元数据信息存储在ZK的持久节点中，这些节点记录了ZK的元数据描述了Topic的分区的信息，记录了具体的Leader，副本数等信息。
 
 > 注意：<font color="green">controller是在Broker端的，Coordinator也是在Broker端的，客户端只会与Broker链接而不会与controller直接连接。</font>
+
 ## Topic&Partition分区
 
 ### 发送端  
@@ -54,15 +63,23 @@ kafkaConsumer.assign(Arrays.asList(topicPartition));
 ```
 - 若不指定，则有两种方式来产生对应关系，两种方式通过partition.assignment.strategy这个参数来设置
 
+#### 消费端管理总结：
+
+1、每个消费组由 Kafka 集群中一个特定的 Broker 承担 Group Coordinator 角色。  
+2、该 Coordinator 负责管理该消费组的成员状态、心跳检测、分区分配和 offset 维护。  
+3、Coordinator 的信息都存在特殊的topic中，所以转移后信息不会丢失  
+4、消费组的Coordinator 所在broker时效后，消费者/客户端发现无法与该 Broker 正常通信会触发 元数据刷新（Metadata Refresh），获取最新 Broker 列表，消费者会根据最新的broker信息进行转移获得对应的 Coordinator  
+5、Coordinator只维护元数据信息，消费者客户端根据自己本地实现的策略，进行Consumer leader协调者的管理（不跨网让Coordinator去管），这样更加灵活也是业务逻辑下推到更贴近数据的一端
+
+
 #### Partition分区
 
 &emsp;&emsp;*Replication逻辑上是作用于Topic的，但实际上是体现在每一个Partition上。*  
 &emsp;&emsp;一个分区就是一个提交日志，消息以追加的方式写入分区，然后以先入先出的顺序读取。
 由于一个主题包含多个分区，因此无法在整个主题范围内保证消息的顺序，但可以保证消息在单个分区内的顺序。
-kafka 也是通过分区来实现数据冗余和伸缩性(
-一个Topic可以通过多个分区并分布在不同服务器上的方式，横跨多个服务器)。     
-&emsp;&emsp;一个broker存在0~N个分区，borker与分区关系计算公式：
+kafka 也是通过分区来实现数据冗余和伸缩性(一个Topic可以通过多个分区并分布在不同服务器上的方式，横跨多个服务器)。     
 
+&emsp;&emsp;一个broker存在0~N个分区，borker与分区关系计算公式：
 ```
 对于总量为N的Broker，第i个分区位置：
 int pos = i mod N
