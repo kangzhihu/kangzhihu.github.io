@@ -19,7 +19,23 @@ tags:
 ## 解决了什么
 &emsp;&emsp;解决分布式环境下数据一致性的问题。分布式环境下不同数据副本节点之间可能数据不一致，paxos和raft算法提供了一种可靠的解决方案。
 
-> 两者的很大区别：Paxos算法的主个人理解是对当前"任期"有效的，当提案完成后主就失效了，而Raft算法会产生一个Leader。Raft算法中通过心跳机制来检测节点失效，而Paxos算法则是通过Timeout机制来检测失效节点。
+ **两者选主总结：**    
+
+>  Paxos 过程并非“一轮定主”，而是：
+>   - Paxos 共识本质是“多轮投票+承诺”模型，不一定一轮就有结果；
+>   - Proposer 发起 Prepare（提案），Acceptor 可能因已有更大编号或其他原因不同意；
+>   - 如果遭遇冲突，“这一轮选主/共识未成功”，需要再来一轮（提案号加大再试）；
+>   - 反复碰撞、重试，最终才有一轮被大多数同意（无其他高号重复抢票时）才定主；
+>   - Paxos中<font color="red">相同Term中即使并发进入Accept阶段，但是节点已经承诺过不支持编号小的，当Accept中携带的编号为1<2时，将不被接受，无法通过选举确认阶段，所以不会出现相同Term下两个节点竞选成功</font>
+> 
+>   换句话说，Paxos 往往需要多轮反复，直到最终有一轮“幸运获胜”。
+
+>  Raft 选主过程实际是一轮确定：
+>   - Raft 的 Leader 选举，就是某个 Candidate 在一个任期 term 内向大家请求投票；
+>   - 只要某个节点先获得了半数以上选票，它就立刻成为新 Leader（这一轮选举就结束）；
+>   - 若有多个节点同时竞争（即 term 中无人得半数），下一轮 term 自动开始（随机超时机制保证极少碰撞）；
+> 
+>   所以，几乎一轮选举就能选出 Leader，且选出马上进入工作阶段。    
 
 > 在实际应用中，Raft算法和Paxos算法也各有优劣。Raft算法相对来说更加适用于**需要频繁变更集群配置**的场景，例如分布式数据库的自动扩展。而Paxos算法则更适合于需要**高度可用性和容错性**的场景，例如分布式锁、分布式事务等，就某个值达成一致的算法。  
 > Paxos算法任意一个节点都可接受请求，而Raft节点通过leader节点进服务。
@@ -35,6 +51,32 @@ tags:
 &emsp;&emsp;一句话总结：proposer将发起提案（value）给所有accpetor，超过半数accpetor获得批准后，proposer将提案写入accpetor内，最终所有accpetor获得一致性的确定性取值，且后续不允许再修改。   
 &emsp;&emsp;若不能收集到半数投票，这一轮参与者将一直等待；   
 &emsp;&emsp;在节点角色中存在一个本地定时器，一个倒计时即为一个周期。对于选主Leader场景，如果周期内Leader未发送心跳消息，则Follower自动开启新一轮选主操作。
+
+#### 先给个示例讲解方便理解
+设有 A、B、C、D、E 五位评委。
+
+**第一步：小明 Prepare(1)**
+- 小明编号1，向所有人说：“你们能承诺不支持更小编号吗？”
+- 假设A、B还没收到，C、D、E收到，答应“好，以后 <1 的都不支持了”。
+
+**第二步：小红 Prepare(2)**
+- 小红编号2，向所有人说同样的问题。
+- A、B此时没承诺过其他人，所以答应。
+- C、D、E虽然刚答应过小明，但现在编号2 >1，仍然答应！（因为 Paxos 要求承诺总支持最高编号）。
+- 整个集体都会同意支持小红。
+
+**第三步：小红 Accept(2, value)**
+- 小红请求：“你们能接受我当班长吗？”
+- 如果 C、D、E 在此之前未接受过别的更高编号提案，就答应。
+- 至此，假如小红的 Accept 被大多数接受，即最终小红被选定为共识结果。
+
+**小明这时怎么办？**
+- 小明继续尝试 Accept(1, value) 时，A、B都没答应过编号1，可能会答应；但 C、D、E 已经承诺了编号2，不会再接受编号1 的请求。
+- 所以小明 Accept(1, value) 阶段，也无法再凑够半数被拒绝掉。
+
+#### **不同Term下异常处理**
+&emsp;&emsp;Raft 在**集群日志不一致**时的 Leader 选举原理，<font color= "red">Raft中承诺一个Term中一旦投票给某个节点后，将不在投票给其他节点</font>,当不同Term节点都认为自己是Leader时，只要有一个 Leader 能及时用心跳/日志同步占据大多数，其他节点会识别到 term/Leader 冲突，回退成 Follower，只认更大 term/最新 Leader(即使较低的被承认过也会被替换)。
+
 
 ### 协议两大阶段
 
@@ -74,32 +116,6 @@ P2-b)：Acceptor 应答 Accept
 引用[paxos原理分析简单图解](https://blog.csdn.net/zifanyou/article/details/84779615)示例
 ![分布式-paxos整体流程示意图](https://raw.githubusercontent.com/kangzhihu/images/master/%E5%88%86%E5%B8%83%E5%BC%8F-paxos%E7%A4%BA%E4%BE%8B%E8%AE%B2%E8%A7%A3.png)
 
-#### 示例讲解
-假设2个Proposor， 3个Acceptor。 初始编号 Proposor1=1， Proposor2=2 。
-
-以下按时间顺序进行：
->
-Prepare阶段  
-1. Proposor1 把自己的编号（1）发送给所有Acceptor申请批准进行提案。
-2. Proposor2 把自己的编号（2）发送给所有Acceptor申请批准进行提案。
-3. Acceptor1，Acceptor2 先收到Proposor1的请求，由于之前没有接受过申请，所以都同意Proposor1。
-4. Proposor1获得超过半数同意，转为提交阶段，准备提交。（此时还没向Acceptor3发送，或者已经发送还没有应答）。
-5. Acceptor3接收到Proposor2的请求，由于之前没有接受过申请，所以同意Proposor2。
-6. **Acceptor2接收到Proposor2的请求，判断编号2大于之前的1，所以同意Proposor2。**
-7. Proposor2获得超过半数同意，准备提交。（此时还没向Acceptor1发送，或者已经发送还没有应答）。  
->
-Accept阶段  
-8. Proposor1向Acceptor1，Acceptor2提交(value=a）。
-9. Acceptor1同意Proposor1，Acceptor2发现当前编号已经为2，所以拒绝Proposor1(无应答回复或者回应拒绝)。   
-  - <font color='green'>若响应，因为此时Acceptor中本地还未存储通过的value和Proposorid，故返回内容为空</font>
-10. Proposor2向Acceptor2，Acceptor3提交(value=b）。
-11. Acceptor3同意Proposor2，Acceptor2也会同意Proposor2。
-12. Proposor2提交成功。
-13. Proposor1发现自己的提议未通过一半，增大编号，将原值通过编号（3）发送给所有Acceptor重新申请批准进行提案。
-14. Acceptor2同意Proposor1，并且告知已经接受编号1（value=a）的提案。
-11. Acceptor3同意Proposor1，并且告知已经接受编号2 (value=b) 的提案。
-12. Proposor1选择上一步中编号大的值提交。所以，提交编号3,value=b;
-13. 达成一致，Acceptor中都在本地维护了相同的值(value=b)。
 
 ### Multi Paxos
 &emsp;&emsp;Basic-Paxos 只是理论模型，在实际工程场景下，比如数据库同步 Redolog，还是需要集群内有一个 leader，作为数据库主机，和多个备机联合组成一个 Paoxs 集群，对 Redolog 进行持久化。  
@@ -149,5 +165,54 @@ Leader 会等待大多数的 Follower 也进行了修改，然后才将修改提
 - 索引值：表示日志条目在日志中的位置，它是一个连续且单调递增的整数。
 - 任期编号：指的是创建该日志条目的领导者的任期编号。这个任期编号用于标识在哪个任期内该日志条目被创建。
 
+Raft 在**集群日志不一致**时的 Leader 选举原理，<font color= "red">Raft中承诺一个Term中一旦投票给某个节点后，将不在投票给其他节点</font>,当不同Term节点都认为自己是Leader时，只要有一个 Leader 能及时用心跳/日志同步占据大多数，其他节点会识别到 term/Leader 冲突，回退成 Follower，只认更大 term/最新 Leader(即使较低的被承认过也会被替换)。
+
+
+### Raft 选举问题场景精化
+
+- 假设总共 5 个节点（N=5，需要大多数>=3投票才能当选 Leader）。
+- 节点日志分布如下：
+
+| 节点 | lastLogIndex/lastLogTerm |
+| ---- | ------------------------ |
+| A    | 3                        |
+| B    | 3                        |
+| C    | 3                        |
+| D    | 4                        |
+| E    | 5                        |
+
+- **抛出问题：节点 D（日志为4）Timeout最先发起选举**，向全体请求投票
+  > 若大多数节点（A、B、C）的日志都 ≤3，是否会投票给日志为4的 D，使得日志为5的节点 E 永远无法选出来？
+
+---
+
+## Raft 选举日志新鲜度细节
+
+**Raft 的日志新鲜定义**：投票时只比较 *候选者* 与 *投票者自己* 的日志新旧。
+
+- Raft规定：“投票节点只会给日志‘不比自己老’的Candidate投票。”
+    - 不是和集群最全日志比较，只和自己比较！
+
+---
+
+## 分析投票过程
+
+### 1. 节点 D 发起选举
+
+- D 的(4) >= A/B/C 的(3)，A B C 都会投票给 D（因为 D 的日志比他们新）。
+- D 自己也可以投自己一票。
+- D 得到 4 票（D, A, B, C），则直接当选Leader。
+
+### 2. 节点 E 在下一个 term 发起选举尝试
+
+- E 的 lastLog 5，比 D 的 4 新。
+- **但是此时 D 还是 Leader**，只要 D 不挂、网络未分区，E 不会有机会成为 Candidate 并拉票。
+- 如果 D Down 机或失去 Leader 身份，E 有机会发起选主。
+
+- 如果 E 拉票，A/B/C 的 lastLog 仍是 3，E >= 他们，A/B/C 会投票给 E。
+- D 的 lastLog 是 4，E 的 5 > 4，也会投。
+- 所以只要 E 能发起选主，是有机会成功的。
+
+---
 
 

@@ -18,7 +18,8 @@ Read View 、MVCC和 Next-Key Locks 配合的方式如下：
 2、MVCC会为事务操作(读/写)期间涉及到的数据都创建一个版本进行管理，后续都读这个快照；  
 3、当产生一个写动作时，则要去判断这个记录的锁情况(更新、当前读等加锁了)，冲突时进行排队等待。
 
-> &emsp;&emsp;<font color="red">**其实MVCC本来的用途是解决写时加锁不能读的问题,也就是增加读的速度,可以代替行锁。** 两者都可以解决幻读问题，但是在**快照读**时使用MVCC,在**当前读**时使用next_key锁。</font>
+> &emsp;&emsp;<font color="red">**其实MVCC本来的用途是解决写时加锁不能读的问题,也就是增加读的速度,可以代替行锁。** 两者都可以解决幻读问题，但是在**快照读**时使用MVCC,在**当前读**时使用next_key锁。</font>  
+> &emsp;&emsp;为了在rr和rc级别下，可能出现当前事务拿到上一个事务的旧值(由于快照原因)，只能通过for update或者版本控制，读取的时候使用for update触发行锁或者间隙锁等，来排它。
 
 ## MVCC
 &emsp;&emsp;Multi-Version Concurrency Control 多版本并发控制。MySQL的大多数事务型存储引擎实现的都不是简单的行级锁。基于提升并发性能的考虑使用了MVCC机制。**MVCC是行级锁的一个变种，是对行锁的优化**，其实现没有标准，但大都实现了非阻塞的读操作，写操作也只锁定必要的行。   
@@ -280,8 +281,9 @@ update test set comment = ‘ccc’ where id = 9; --- 语句2
 
 -- 初始时DB_TRX_ID事务id为1809，当前事务id为1811
 ```
-[示例参考](http://hedengcheng.com/?p=148#_Toc322691905)
-
+[示例参考](http://hedengcheng.com/?p=148#_Toc322691905)  
+Undo：撤销上一步或几步的操作，使系统恢复到之前的某个状态-- 事务回滚  
+Redo：重做之前被撤销的操作，使系统回到撤销操作之前的状态--宕机恢复  
 ![数据主键变更undo示例](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-undo%E5%88%A0%E9%99%A4%E7%A4%BA%E4%BE%8B.png)   
 &emsp;&emsp;语句1处：主键的变更对InnoDB来说其实是删除原数据并插入一条新数据，所以在索引上加锁后，原数据删除标志位DELETE_BIT变更为0，并且回滚指针指向了undo log中记录的变更前的原始数据并变更事务版本号。同时，在索引上添加一条记录，该记录回滚指向为空。     
 ![数据变更undo示例](https://raw.githubusercontent.com/kangzhihu/images/master/mysql-undo%E5%8F%98%E6%9B%B4%E7%A4%BA%E4%BE%8B.png)    

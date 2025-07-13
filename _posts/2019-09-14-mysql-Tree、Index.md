@@ -192,4 +192,8 @@ select * from member a inner join member b on a.id=b.id;
 &emsp;&emsp;为啥选择inner join？使用 inner join时，优化器能自动选择哪种a链接b还是b链接a，这样从整体性能上比使用left join或者right join 要高。
 
 ### InnoDB 记录行与数据页
-[参考阅读-InnoDB 记录行与数据页](https://zhuanlan.zhihu.com/p/639042049)
+[参考阅读-InnoDB 记录行与数据页](https://zhuanlan.zhihu.com/p/639042049)  
+&emsp;&emsp;在mysql中，叶子节点的存储是逻辑连续但是物理上不连续的，当叶子节点(一个叶子节点=一页)满时，新插入节点会导致页分裂，旧节点一半的数据会挪动到新页上去；  
+为了加快减少IO和加快查找，会  
+1、把经常访问的数据页和索引页缓存在内存里，减少磁盘 I/O，提高数据库性能。  
+2、采用预读机制，顺序查时提前多读几个页，批量放进内存，避免频繁随机 IO；  
