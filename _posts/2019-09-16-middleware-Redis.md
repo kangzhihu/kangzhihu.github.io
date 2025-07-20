@@ -78,6 +78,28 @@ Redis对于过期键有三种清除策略：
 	+ volatile-ttl：从设置了过期时间的数据集中，选择马上就要过期的数据进行释放操作；  
 	+ noeviction：默认，不删除任意数据(但redis还会根据引用计数器进行释放呦~),这时如果内存不够时，会直接返回错误；  
 
+### 缓存一致性
+#### Cache-Aside模式‌
+```java
+public static void writeData(String key, String value) {
+        Database.update(key, value);
+        Cache.delete(key); // 关键：删除而非更新缓存
+    }
+```
+
+#### 延时双删
+```java
+public void updateWithDoubleDelete(String key, Runnable dbUpdate, long delayMs) {
+        // 第一次删除
+        redisTemplate.delete(key);
+        // 更新数据库
+        dbUpdate.run();
+        // 延迟第二次删除
+        scheduler.schedule(() -> redisTemplate.delete(key), delayMs, TimeUnit.MILLISECONDS);
+    }
+```
+
+
 ### 缓存穿透与雪崩
 #### 缓存穿透
 &emsp;&emsp;产生原因：正常业务或者恶意请求大量不存在的key。(服务正常，未查询到)  
