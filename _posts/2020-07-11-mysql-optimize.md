@@ -96,9 +96,9 @@ tags:
 
 #### 3、数据库配置调优
  - 关键参数调整：
-  + 缓冲池大小（innodb_buffer_pool_size）
-  + 排序缓冲区（sort_buffer_size）
-  + 连接线程数（thread_pool_size）
+     + 缓冲池大小（innodb_buffer_pool_size）
+     + 排序缓冲区（sort_buffer_size）
+     + 连接线程数（thread_pool_size）
 #### 4、架构级优化
  - 读写分离、分库分表、缓存策略、数据归档
 
