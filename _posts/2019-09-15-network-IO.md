@@ -80,6 +80,11 @@ tags:
 注：由于信号驱动I/O在实际中并不常用，所以只提及剩下的四种IO 模型。  
 > 可以看出IO模型是从全局开看IO交互的，具体的实现看句柄的管理方式(select/poll、epoll)+拷贝方式  
 
+> BIO:应用层业务线程阻塞  
+> NIO：业务线程提交后不阻塞，但是应用层（Selector线程）都需要定期select()/poll()/epoll()去主动轮询  
+> AIO：应用线程完全不用自己去轮询、检测I/O状态，操作系统完成后，主动通知应用层代码去处理  
+
+
 ### 2.1 block I/O模型（阻塞I/O）
 阻塞I/O模型示意图：  
 ![阻塞I/O模型示意图](https://raw.githubusercontent.com/kangzhihu/images/master/%E9%98%BB%E5%A1%9EIO%E6%A8%A1%E5%9E%8B%E7%A4%BA%E6%84%8F%E5%9B%BE.png)  
